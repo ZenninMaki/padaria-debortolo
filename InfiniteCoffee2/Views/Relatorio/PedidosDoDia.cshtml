@@ -1,0 +1,23 @@
+@* PedidosDoDia.cshtml *@
+@model List<Dictionary<string, object>>
+@{ ViewBag.Title = "Pedidos do Dia"; }
+
+<h2>Pedidos do Dia</h2>
+<a href="/Relatorio" class="btn btn-secondary mb-3">← Voltar</a>
+
+@if (!Model.Any())
+{
+    <p class="text-muted">Nenhum pedido registrado hoje.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead><tr><th>Pedido #</th><th>Data/Hora</th></tr></thead>
+        <tbody>
+            @foreach (var p in Model)
+            {
+                <tr><td>@p["id_pedido"]</td><td>@p["datahora"]</td></tr>
+            }
+        </tbody>
+    </table>
+}

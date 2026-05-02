@@ -1,0 +1,24 @@
+@{ ViewBag.Title = "Cadastrar Produto"; }
+
+<h2>Cadastrar Produto</h2>
+
+<form method="post" action="/Produto/Cadastrar">
+    <div class="mb-3">
+        <label class="form-label">Nome</label>
+        <input type="text" name="nome" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Preço (R$)</label>
+        <input type="number" name="preco" step="0.01" class="form-control" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Tipo</label>
+        <select name="tipo" class="form-select">
+            <option>Bebida</option>
+            <option>Prato</option>
+            <option>Sobremesa</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a href="/Produto" class="btn btn-secondary">Cancelar</a>
+</form>

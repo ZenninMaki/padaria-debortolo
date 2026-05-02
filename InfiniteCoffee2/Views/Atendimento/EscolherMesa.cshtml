@@ -1,0 +1,29 @@
+@{ ViewBag.Title = "Escolher Mesa"; }
+
+<h2>Novo Atendimento</h2>
+<p class="text-muted">Etapa 2 de 4 — Selecionar Mesa</p>
+
+<table class="table table-striped">
+    <thead><tr><th>Mesa</th><th>Capacidade</th><th>Status</th><th></th></tr></thead>
+    <tbody>
+        @foreach (var m in (List<Dictionary<string, object>>)ViewBag.Mesas)
+        {
+            var status = m["status_mesa"].ToString();
+            var disponivel = status == "Disponível";
+            <tr>
+                <td>Mesa @m["numero"]</td>
+                <td>@m["capacidade"] pessoas</td>
+                <td><span class="badge bg-@(disponivel ? "success" : "danger")">@status</span></td>
+                <td>
+                    @if (disponivel)
+                    {
+                        <form method="post" action="/Atendimento/SelecionarMesa">
+                            <input type="hidden" name="mesaId" value="@m["id_mesa"]" />
+                            <button type="submit" class="btn btn-sm btn-success">Selecionar</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

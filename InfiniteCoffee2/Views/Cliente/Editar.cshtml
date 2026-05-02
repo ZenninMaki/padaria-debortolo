@@ -1,0 +1,21 @@
+@model Dictionary<string, object>
+@{ ViewBag.Title = "Editar Cliente"; }
+
+<h2>Editar Cliente</h2>
+
+<form method="post" action="/Cliente/Editar/@Model["id_cliente"]">
+    <div class="mb-3">
+        <label class="form-label">Nome</label>
+        <input type="text" name="nome" class="form-control" value="@Model["nome_cliente"]" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Email</label>
+        <input type="email" name="email" class="form-control" value="@Model["email"]" />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Telefone</label>
+        <input type="text" name="telefone" class="form-control" value="@Model["telefone"]" />
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a href="/Cliente" class="btn btn-secondary">Cancelar</a>
+</form>

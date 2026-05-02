@@ -1,0 +1,25 @@
+@model Dictionary<string, object>
+@{ ViewBag.Title = "Editar Produto"; }
+
+<h2>Editar Produto</h2>
+
+<form method="post" action="/Produto/Editar/@Model["id_produto"]">
+    <div class="mb-3">
+        <label class="form-label">Nome</label>
+        <input type="text" name="nome" class="form-control" value="@Model["nome_produto"]" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Preço (R$)</label>
+        <input type="number" name="preco" step="0.01" class="form-control" value="@Model["preco"]" required />
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Tipo</label>
+        <select name="tipo" class="form-select">
+            <option selected="@(Model["tipo"].ToString() == "Bebida" ? "selected" : null)">Bebida</option>
+            <option selected="@(Model["tipo"].ToString() == "Prato" ? "selected" : null)">Prato</option>
+            <option selected="@(Model["tipo"].ToString() == "Sobremesa" ? "selected" : null)">Sobremesa</option>
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Salvar</button>
+    <a href="/Produto" class="btn btn-secondary">Cancelar</a>
+</form>

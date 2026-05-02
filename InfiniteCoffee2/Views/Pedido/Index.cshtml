@@ -1,0 +1,47 @@
+@model List<Dictionary<string, object>>
+@{ ViewBag.Title = "Pedidos Abertos"; }
+
+<h2>Pedidos em Aberto</h2>
+
+@if (TempData["Mensagem"] != null)
+{
+    <div class="alert alert-success">@TempData["Mensagem"]</div>
+}
+
+@if (!Model.Any())
+{
+    <p class="text-muted">Nenhum pedido em aberto no momento.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Pedido #</th>
+                <th>Mesa</th>
+                <th>Status</th>
+                <th>Fechar</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model)
+            {
+                <tr>
+                    <td>@p["id_pedido"]</td>
+                    <td>Mesa @p["mesaid"]</td>
+                    <td>@p["status_pedido"]</td>
+                    <td>
+                        <form method="post" action="/Pedido/Fechar">
+                            <input type="hidden" name="pedidoId" value="@p["id_pedido"]" />
+                            <input type="hidden" name="mesaId" value="@p["mesaid"]" />
+                            <button type="submit" class="btn btn-sm btn-danger"
+                                    onclick="return confirm('Fechar pedido #@p["id_pedido"]?')">
+                                Fechar
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -1,0 +1,47 @@
+@model List<Dictionary<string, object>>
+@{ ViewBag.Title = "Mesas"; }
+
+<h2>Mesas</h2>
+
+@if (TempData["Mensagem"] != null)
+{
+    <div class="alert alert-success">@TempData["Mensagem"]</div>
+}
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Mesa</th>
+            <th>Capacidade</th>
+            <th>Status</th>
+            <th>Alterar Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var m in Model)
+        {
+            <tr>
+                <td>Mesa @m["numero"]</td>
+                <td>@m["capacidade"] pessoas</td>
+                <td>
+                    @{
+                        var status = m["status_mesa"].ToString();
+                        var badge = status == "Ocupada" ? "danger" : status == "Reservada" ? "warning" : "success";
+                    }
+                    <span class="badge bg-@badge">@status</span>
+                </td>
+                <td>
+                    <form method="post" action="/Mesa/AlterarStatus" class="d-flex gap-2">
+                        <input type="hidden" name="id" value="@m["id_mesa"]" />
+                        <select name="status" class="form-select form-select-sm">
+                            <option>Disponível</option>
+                            <option>Ocupada</option>
+                            <option>Reservada</option>
+                        </select>
+                        <button type="submit" class="btn btn-sm btn-primary">OK</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

@@ -1,0 +1,15 @@
+@model List<Dictionary<string, object>>
+@{ ViewBag.Title = "Produtos Mais Vendidos"; }
+
+<h2>Produtos Mais Vendidos</h2>
+<a href="/Relatorio" class="btn btn-secondary mb-3">← Voltar</a>
+
+<table class="table table-striped">
+    <thead><tr><th>Produto</th><th>Total Vendido</th></tr></thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr><td>@p["nome_produto"]</td><td>@p["total_vendido"]</td></tr>
+        }
+    </tbody>
+</table>

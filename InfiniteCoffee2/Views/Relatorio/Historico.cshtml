@@ -1,0 +1,37 @@
+@model List<Dictionary<string, object>>
+@{ ViewBag.Title = "Histórico do Cliente"; }
+
+<h2>Histórico do Cliente</h2>
+<a href="/Relatorio" class="btn btn-secondary mb-3">← Voltar</a>
+
+<form method="get" action="/Relatorio/Historico" class="d-flex gap-2 mb-4">
+    <select name="clienteId" class="form-select">
+        <option value="">-- Selecione um cliente --</option>
+        @foreach (var c in (List<Dictionary<string, object>>)ViewBag.Clientes)
+        {
+            var sel = ViewBag.ClienteId != null && ViewBag.ClienteId.ToString() == c["id_cliente"].ToString() ? "selected" : "";
+            <option value="@c["id_cliente"]"
+                    selected="@(ViewBag.ClienteId != null && ViewBag.ClienteId.ToString() == c["id_cliente"].ToString() ? "selected" : null)">
+                @c["nome_cliente"]
+            </option>
+        }
+    </select>
+    <button type="submit" class="btn btn-primary">Ver Histórico</button>
+</form>
+
+@if (Model.Any())
+{
+    <table class="table table-striped">
+        <thead><tr><th>Pedido #</th><th>Data/Hora</th><th>Status</th></tr></thead>
+        <tbody>
+            @foreach (var h in Model)
+            {
+                <tr>
+                    <td>@h["id_pedido"]</td>
+                    <td>@h["datahora"]</td>
+                    <td>@h["status_pedido"]</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

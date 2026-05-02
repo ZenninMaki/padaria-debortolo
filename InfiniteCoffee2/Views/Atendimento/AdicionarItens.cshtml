@@ -1,0 +1,47 @@
+@{ ViewBag.Title = "Adicionar Itens"; }
+
+<h2>Novo Atendimento</h2>
+<p class="text-muted">Etapa 4 de 4 — Adicionar Itens ao Pedido #@ViewBag.PedidoId</p>
+
+@if (TempData["Mensagem"] != null)
+{
+    <div class="alert alert-success">@TempData["Mensagem"]</div>
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <form method="post" action="/Atendimento/AdicionarItem">
+            <table class="table table-striped">
+                <thead><tr><th>ID</th><th>Produto</th><th>Preço</th><th>Tipo</th><th>Qtd</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var p in (List<Dictionary<string, object>>)ViewBag.Produtos)
+                    {
+                        <tr>
+                            <td>@p["id_produto"]</td>
+                            <td>@p["nome_produto"]</td>
+                            <td>R$ @p["preco"]</td>
+                            <td>@p["tipo"]</td>
+                            <td>
+                                <form method="post" action="/Atendimento/AdicionarItem" class="d-flex gap-1">
+                                    <input type="hidden" name="produtoId" value="@p["id_produto"]" />
+                                    <input type="number" name="quantidade" value="1" min="1" class="form-control form-control-sm" style="width:70px" />
+                                    <button type="submit" class="btn btn-sm btn-primary">+ Add</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </form>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card p-3">
+            <h5>Pedido #@ViewBag.PedidoId</h5>
+            <p class="text-muted">Adicione os itens à esquerda.</p>
+            <a href="/Atendimento/Pagamento" class="btn btn-success w-100">
+                Ir para Pagamento →
+            </a>
+        </div>
+    </div>
+</div>

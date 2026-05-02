@@ -1,0 +1,55 @@
+@* Index.cshtml - Etapa 1: Cliente *@
+@{ ViewBag.Title = "Novo Atendimento"; }
+
+<h2>Novo Atendimento</h2>
+<p class="text-muted">Etapa 1 de 4 — Identificar Cliente</p>
+
+@if (TempData["Mensagem"] != null)
+{
+    <div class="alert alert-info">@TempData["Mensagem"]</div>
+}
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card p-3 mb-3">
+            <h5>Cliente existente</h5>
+            <table class="table table-sm">
+                <thead><tr><th>ID</th><th>Nome</th><th>Email</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var c in (List<Dictionary<string, object>>)ViewBag.Clientes)
+                    {
+                        <tr>
+                            <td>@c["id_cliente"]</td>
+                            <td>@c["nome_cliente"]</td>
+                            <td>@c["email"]</td>
+                            <td>
+                                <form method="post" action="/Atendimento/SelecionarCliente">
+                                    <input type="hidden" name="clienteId" value="@c["id_cliente"]" />
+                                    <button type="submit" class="btn btn-sm btn-success">Selecionar</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card p-3">
+            <h5>Cadastrar novo cliente</h5>
+            <form method="post" action="/Atendimento/CadastrarCliente">
+                <div class="mb-2">
+                    <input type="text" name="nome" class="form-control" placeholder="Nome" required />
+                </div>
+                <div class="mb-2">
+                    <input type="email" name="email" class="form-control" placeholder="Email" />
+                </div>
+                <div class="mb-2">
+                    <input type="text" name="telefone" class="form-control" placeholder="Telefone" />
+                </div>
+                <button type="submit" class="btn btn-primary">Cadastrar e Continuar</button>
+            </form>
+        </div>
+    </div>
+</div>

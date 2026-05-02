@@ -1,0 +1,51 @@
+@model List<Dictionary<string, object>>
+@{ ViewBag.Title = "Clientes"; }
+
+<h2>Clientes</h2>
+
+@if (TempData["Mensagem"] != null)
+{
+    <div class="alert alert-success">@TempData["Mensagem"]</div>
+}
+
+<div class="mb-3 d-flex gap-2">
+    <a href="/Cliente/Cadastrar" class="btn btn-primary">+ Novo Cliente</a>
+
+    <form method="get" action="/Cliente/Buscar" class="d-flex gap-2">
+        <input type="text" name="valor" class="form-control" placeholder="Buscar por nome ou email" value="@ViewBag.Busca" />
+        <button type="submit" class="btn btn-secondary">Buscar</button>
+    </form>
+
+    @if (ViewBag.Busca != null)
+    {
+        <a href="/Cliente" class="btn btn-outline-secondary">Limpar</a>
+    }
+</div>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Email</th>
+            <th>Telefone</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var c in Model)
+        {
+            <tr>
+                <td>@c["id_cliente"]</td>
+                <td>@c["nome_cliente"]</td>
+                <td>@c["email"]</td>
+                <td>@c["telefone"]</td>
+                <td>
+                    <a href="/Cliente/Editar/@c["id_cliente"]" class="btn btn-sm btn-warning">Editar</a>
+                    <a href="/Cliente/Excluir/@c["id_cliente"]" class="btn btn-sm btn-danger"
+                       onclick="return confirm('Confirmar exclusão?')">Excluir</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
