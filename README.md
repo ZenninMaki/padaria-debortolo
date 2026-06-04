@@ -179,7 +179,6 @@ AS
 BEGIN
     INSERT INTO Pedidos (mesaid, funcionarioid, clienteid, datahora, status_pedido)
     VALUES (@mesaId, @funcionarioId, @clienteId, GETDATE(), 'Aberto')
-
     SELECT SCOPE_IDENTITY() AS id_pedido
 END
 GO
@@ -191,9 +190,7 @@ CREATE PROCEDURE sp_AdicionarItemPedido
 AS
 BEGIN
     DECLARE @preco DECIMAL(10,2)
-
     SELECT @preco = preco FROM Produtos WHERE id_produto = @produtoId
-
     INSERT INTO Itens_Pedidos (pedidoid, produtoid, quantidade, preco_unitario)
     VALUES (@pedidoId, @produtoId, @quantidade, @preco)
 END
@@ -329,9 +326,9 @@ END
 
 USE infiniteCoffee;
 
--- =============================================
+
 -- FUNCIONARIOS
--- =============================================
+
 INSERT INTO Funcionarios (nome_funcionario, cargo) VALUES
 ('Sarah Lopes',     'Dona'),
 ('Jean Reis',       'Caixa'),
@@ -342,9 +339,9 @@ INSERT INTO Funcionarios (nome_funcionario, cargo) VALUES
 ('Lucas Pollar',    'Cozinheiro'),
 ('Rayssa Yuki',     'Garçonete');
 
--- =============================================
+
 -- CLIENTES
--- =============================================
+
 INSERT INTO Clientes (nome_cliente, email, telefone) VALUES
 ('Ana Clara Mendes',     'anaclara.mendes@gmail.com',       '(11) 98234-5678'),
 ('Bruno Tavares',        'brunotavares@hotmail.com',         '(21) 97654-3210'),
@@ -367,9 +364,9 @@ INSERT INTO Clientes (nome_cliente, email, telefone) VALUES
 ('Yasmin Azevedo',       'yasmin.azevedo@outlook.com',       '(31) 95434-7892'),
 ('Rodrigo Figueiredo',   'rodrigo.fig@gmail.com',            '(11) 94322-2346');
 
--- =============================================
+
 -- PRODUTOS
--- =============================================
+
 INSERT INTO Produtos (nome_produto, preco, tipo) VALUES
 -- Bebidas
 ('Café Expresso',                6.00,  'Bebida'),
@@ -398,9 +395,9 @@ INSERT INTO Produtos (nome_produto, preco, tipo) VALUES
 ('Mini Sanduíche de Peito de Peru', 16.00, 'Prato'),
 ('Torta Salgada de Frango (fatia)', 13.00, 'Prato');
 
--- =============================================
+
 -- MESAS (16 mesas, capacidades pares)
--- =============================================
+
 INSERT INTO Mesas (numero, capacidade, status_mesa) VALUES
 (1,  4, 'Disponível'),
 (2,  4, 'Disponível'),
@@ -419,10 +416,10 @@ INSERT INTO Mesas (numero, capacidade, status_mesa) VALUES
 (15, 4, 'Reservada'),
 (16, 4, 'Disponível');
 
--- =============================================
+
 -- PEDIDOS
 -- funcionario: 3=Júlia, 5=Yuri, 8=Rayssa
--- =============================================
+
 SET DATEFORMAT YMD;
 
 INSERT INTO Pedidos (mesaid, funcionarioid, clienteid, datahora, status_pedido) VALUES
@@ -445,9 +442,10 @@ INSERT INTO Pedidos (mesaid, funcionarioid, clienteid, datahora, status_pedido) 
 (3, 2, 3, '2024-01-01T00:15:00', 'Finalizado'),
 (4, 3, 4, '2024-05-27T16:55:00', 'Finalizado'),
 (5, 4, 5, '2024-09-09T21:10:00', 'Finalizado');
--- =============================================
+
+
 -- ITENS_PEDIDOS
--- =============================================
+
 INSERT INTO Itens_Pedidos (pedidoid, produtoid, quantidade, preco_unitario) VALUES
 (1, 1, 2, 5.50),
 (1, 4, 1, 6.00),
