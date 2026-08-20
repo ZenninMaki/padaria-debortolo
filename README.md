@@ -112,7 +112,28 @@ CREATE PROCEDURE sp_ExcluirCliente
     @id INT
 AS
 BEGIN
-    DELETE FROM Clientes WHERE id_cliente = @id
+    SET NOCOUNT ON;
+    SET XACT_ABORT ON;
+
+    BEGIN TRY
+        BEGIN TRANSACTION;
+
+        -- Remove os dados dependentes antes do cliente para respeitar as foreign keys.
+        DELETE FROM Pagamentos
+        WHERE pedidoid IN (SELECT id_pedido FROM Pedidos WHERE clienteid = @id);
+
+        DELETE FROM Itens_Pedidos
+        WHERE pedidoid IN (SELECT id_pedido FROM Pedidos WHERE clienteid = @id);
+
+        DELETE FROM Pedidos WHERE clienteid = @id;
+        DELETE FROM Clientes WHERE id_cliente = @id;
+
+        COMMIT TRANSACTION;
+    END TRY
+    BEGIN CATCH
+        IF XACT_STATE() <> 0 ROLLBACK TRANSACTION;
+        THROW;
+    END CATCH
 END
 GO
 

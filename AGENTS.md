@@ -18,7 +18,7 @@ Estas regras valem para todo trabalho neste repositorio.
 - Nao coloque senhas, tokens ou strings de conexao com credenciais no repositorio.
 - Toda operacao de escrita deve validar entrada e retornar feedback compreensivel ao usuario.
 - Exclusoes devem ser `POST`, pedir confirmacao na interface e respeitar historico e chaves estrangeiras.
-- Nao apague pedidos, pagamentos ou itens relacionados automaticamente para viabilizar uma exclusao.
+- Nao apague pedidos, pagamentos ou itens relacionados sem autorizacao explicita; quando autorizado, use transacao e documente a perda de historico.
 - Ao alterar uma View, preserve a acessibilidade basica, responsividade e as acoes existentes.
 - Depois de alterar C# ou Razor, execute `dotnet build InfiniteCoffee2.slnx --no-restore`.
 - Se o servidor local estiver em execucao e bloquear o build, reinicie o processo antes de validar.
@@ -30,7 +30,7 @@ Estas regras valem para todo trabalho neste repositorio.
 - Prefira migrations ou scripts versionados e idempotentes; documente ordem de execucao.
 - Teste inserts, updates, deletes e consultas em uma base de desenvolvimento.
 - Preserve dados historicos de pedidos e pagamentos.
-- Ao encontrar erro de integridade referencial, explique a causa e implemente tratamento explicito, nao cascade destrutivo.
+- Ao encontrar erro de integridade referencial, explique a causa e implemente tratamento explicito; cascade destrutivo exige autorizacao explicita.
 
 ## Git e publicacao
 
