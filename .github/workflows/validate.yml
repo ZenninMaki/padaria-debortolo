@@ -1,0 +1,75 @@
+name: Validate
+
+on:
+  pull_request:
+    branches:
+      - master
+      - CdmEdu
+  push:
+    branches:
+      - master
+      - CdmEdu
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Build, security and smoke tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore InfiniteCoffee2.slnx -p:TreatWarningsAsErrors=true
+
+      - name: Check vulnerable packages
+        shell: bash
+        run: |
+          set -euo pipefail
+          report="$(dotnet list InfiniteCoffee2/InfiniteCoffee2.csproj package --vulnerable --include-transitive)"
+          echo "$report"
+          if grep -q "tem uma\|has the following vulnerable" <<< "$report"; then
+            echo "Vulnerable NuGet packages detected."
+            exit 1
+          fi
+
+      - name: Build
+        run: dotnet build InfiniteCoffee2.slnx --no-restore --configuration Release --warnaserror
+
+      - name: Run available tests
+        run: dotnet test InfiniteCoffee2.slnx --no-restore --configuration Release --verbosity normal
+
+      - name: Start application
+        shell: bash
+        run: |
+          set -euo pipefail
+          nohup dotnet run --project InfiniteCoffee2/InfiniteCoffee2.csproj --no-build --configuration Release --urls http://127.0.0.1:5080 > app.log 2>&1 &
+          echo $! > app.pid
+
+      - name: Smoke test public routes
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:5080/ > /dev/null; then
+              break
+            fi
+            sleep 1
+          done
+          curl --fail --silent --show-error http://127.0.0.1:5080/ > /dev/null
+          curl --fail --silent --show-error http://127.0.0.1:5080/Home/Privacy > /dev/null
+
+      - name: Upload application log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: application-log
+          path: app.log

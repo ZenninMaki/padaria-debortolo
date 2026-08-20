@@ -4,7 +4,7 @@ Estas regras valem para todo trabalho neste repositorio.
 
 ## Contexto tecnico
 
-- Aplicacao ASP.NET Core MVC em .NET 8.
+- Aplicacao ASP.NET Core MVC em .NET 10.
 - Views Razor em `InfiniteCoffee2/Views`.
 - Estilos estaticos em `InfiniteCoffee2/wwwroot`.
 - Acesso ao SQL Server centralizado em `InfiniteCoffee2/Data/Banco.cs`.
@@ -35,7 +35,8 @@ Estas regras valem para todo trabalho neste repositorio.
 ## Git e publicacao
 
 - O remoto oficial e `https://github.com/pideias/pideias-infinittecoffee.git`.
-- Todo push deste projeto deve ser feito na branch `CdmEdu`.
+- Todo commit e push deste projeto deve ser feito na branch `kaio`.
+- Antes de qualquer commit ou push, confirme que a branch atual e `kaio`.
 - Antes de commit, confira `git status`, `git diff` e o resultado do build.
 - Nao use `git reset --hard`, `git checkout --` ou force push para apagar trabalho existente.
 - Use mensagens de commit curtas e descreva uma mudanca coesa.
