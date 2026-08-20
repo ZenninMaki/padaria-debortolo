@@ -14,6 +14,8 @@ Estas regras valem para todo trabalho neste repositorio.
 
 - Inspecione Controller, View, Banco.cs e README antes de alterar um fluxo existente.
 - Preserve as rotas, nomes de campos, parametros de procedures e contratos entre Controller e View.
+- Telas, HTML, CSS e rotas ja criados nao podem ser alterados, movidos ou removidos.
+- Novas funcionalidades devem ser adicionadas em novas telas, arquivos ou rotas, sem modificar o que ja existe.
 - Prefira a menor alteracao correta; nao reescreva a arquitetura sem necessidade concreta.
 - Nao coloque senhas, tokens ou strings de conexao com credenciais no repositorio.
 - Toda operacao de escrita deve validar entrada e retornar feedback compreensivel ao usuario.

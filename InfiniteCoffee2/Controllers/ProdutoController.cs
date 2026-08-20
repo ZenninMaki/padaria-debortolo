@@ -14,9 +14,15 @@ namespace InfiniteCoffee2.Controllers
         public IActionResult Cadastrar() => View();
 
         [HttpPost]
-        public IActionResult Cadastrar(string nome, decimal preco, string tipo)
+        public IActionResult Cadastrar(string nome, decimal preco, string tipo, int quantidade, string codigoBarras, string descricao)
         {
-            Banco.CadastrarProduto(nome, preco, tipo);
+            if (string.IsNullOrWhiteSpace(nome) || preco <= 0 || quantidade < 0 || codigoBarras?.Length > 50 || descricao?.Length > 500)
+            {
+                TempData["Mensagem"] = "Informe nome, preço, quantidade e dados válidos para o produto.";
+                return RedirectToAction("Index");
+            }
+
+            Banco.CadastrarProduto(nome.Trim(), preco, tipo.Trim(), quantidade, codigoBarras ?? string.Empty, descricao ?? string.Empty);
             TempData["Mensagem"] = "Produto cadastrado com sucesso!";
             return RedirectToAction("Index");
         }
