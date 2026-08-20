@@ -8,6 +8,11 @@
     <div class="alert alert-success">@TempData["Mensagem"]</div>
 }
 
+@if (TempData["MensagemErro"] != null)
+{
+    <div class="alert alert-warning">@TempData["MensagemErro"]</div>
+}
+
 <div class="mb-3 d-flex gap-2">
     <a href="/Cliente/Cadastrar" class="btn btn-primary">+ Novo Cliente</a>
 
@@ -42,8 +47,10 @@
                 <td>@c["telefone"]</td>
                 <td>
                     <a href="/Cliente/Editar/@c["id_cliente"]" class="btn btn-sm btn-warning">Editar</a>
-                    <a href="/Cliente/Excluir/@c["id_cliente"]" class="btn btn-sm btn-danger"
-                       onclick="return confirm('Confirmar exclusão?')">Excluir</a>
+                    <form method="post" action="/Cliente/Excluir/@c["id_cliente"]" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-danger"
+                                onclick="return confirm('Confirmar exclusão?')">Excluir</button>
+                    </form>
                 </td>
             </tr>
         }

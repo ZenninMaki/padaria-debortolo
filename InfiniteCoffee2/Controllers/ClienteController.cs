@@ -1,5 +1,6 @@
 using InfiniteCoffee2.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 
 namespace InfiniteCoffee2.Controllers
 {
@@ -47,10 +48,19 @@ namespace InfiniteCoffee2.Controllers
             return RedirectToAction("Index");
         }
 
+        [HttpPost]
         public IActionResult Excluir(int id)
         {
-            Banco.ExcluirCliente(id);
-            TempData["Mensagem"] = "Cliente excluído.";
+            try
+            {
+                Banco.ExcluirCliente(id);
+                TempData["Mensagem"] = "Cliente excluído.";
+            }
+            catch (SqlException ex) when (ex.Number == 547)
+            {
+                TempData["MensagemErro"] = "Este cliente possui pedidos vinculados e não pode ser excluído para preservar o histórico.";
+            }
+
             return RedirectToAction("Index");
         }
     }
