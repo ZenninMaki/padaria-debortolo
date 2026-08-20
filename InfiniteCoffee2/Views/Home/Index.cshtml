@@ -1,47 +1,39 @@
-﻿@{
+@{
     ViewBag.Title = "Infinite Coffee";
 }
 
-<div class="text-center mb-5">
-    <h1>☕ Infinite Coffee</h1>
-    <p class="text-muted">Sistema de Gestão</p>
-</div>
+<section class="hero-home">
+    <div class="hero-copy">
+        <p class="eyebrow">cafe, encontros e possibilidades</p>
+        <h1>INFINITE<br /><span>COFFEE</span></h1>
+        <p class="hero-intro">Um jeito mais leve de cuidar da sua cafeteria, do primeiro pedido ao ultimo gole.</p>
+        <div class="hero-actions">
+            <a href="/Atendimento" class="btn btn-primary btn-lg">Novo Atendimento</a>
+            <a href="/Produto" class="btn btn-outline-secondary btn-lg">Ver cardapio</a>
+        </div>
+    </div>
+    <div class="coffee-illustration" aria-label="Ilustracao de duas pessoas em xicaras de cafe">
+        <div class="steam steam-one"></div>
+        <div class="steam steam-two"></div>
+        <div class="steam steam-three"></div>
+        <div class="cup cup-left"><span class="cup-coffee"></span></div>
+        <div class="cup cup-right"><span class="cup-coffee"></span></div>
+        <div class="person person-reader"><span class="head"></span><span class="body"></span><span class="book"></span></div>
+        <div class="person person-left"><span class="head"></span><span class="body"></span></div>
+        <div class="person person-right"><span class="head"></span><span class="body"></span></div>
+    </div>
+</section>
 
-<div class="row g-3 justify-content-center">
-    <div class="col-md-4">
-        <a href="/Atendimento" class="card text-center p-4 text-decoration-none text-dark h-100">
-            <div class="fs-1">🛎️</div>
-            <h5 class="mt-2">Novo Atendimento</h5>
-        </a>
+<section class="quick-menu">
+    <div class="section-heading">
+        <p class="eyebrow">painel da casa</p>
+        <h2>O que voce quer fazer?</h2>
     </div>
-    <div class="col-md-4">
-        <a href="/Cliente" class="card text-center p-4 text-decoration-none text-dark h-100">
-            <div class="fs-1">👤</div>
-            <h5 class="mt-2">Clientes</h5>
-        </a>
+    <div class="quick-grid">
+        <a href="/Cliente" class="quick-card"><span class="quick-icon">◎</span><span>Clientes</span><small>Cadastros e contatos</small></a>
+        <a href="/Produto" class="quick-card"><span class="quick-icon">◒</span><span>Cardapio</span><small>Produtos e precos</small></a>
+        <a href="/Mesa" class="quick-card"><span class="quick-icon">▱</span><span>Mesas</span><small>Disponibilidade da casa</small></a>
+        <a href="/Pedido" class="quick-card"><span class="quick-icon">☷</span><span>Pedidos Abertos</span><small>Acompanhe os atendimentos</small></a>
+        <a href="/Relatorio" class="quick-card"><span class="quick-icon">◌</span><span>Relatorios</span><small>Veja o movimento</small></a>
     </div>
-    <div class="col-md-4">
-        <a href="/Produto" class="card text-center p-4 text-decoration-none text-dark h-100">
-            <div class="fs-1">🍽️</div>
-            <h5 class="mt-2">Cardápio</h5>
-        </a>
-    </div>
-    <div class="col-md-4">
-        <a href="/Mesa" class="card text-center p-4 text-decoration-none text-dark h-100">
-            <div class="fs-1">🪑</div>
-            <h5 class="mt-2">Mesas</h5>
-        </a>
-    </div>
-    <div class="col-md-4">
-        <a href="/Pedido" class="card text-center p-4 text-decoration-none text-dark h-100">
-            <div class="fs-1">📋</div>
-            <h5 class="mt-2">Pedidos Abertos</h5>
-        </a>
-    </div>
-    <div class="col-md-4">
-        <a href="/Relatorio" class="card text-center p-4 text-decoration-none text-dark h-100">
-            <div class="fs-1">📊</div>
-            <h5 class="mt-2">Relatórios</h5>
-        </a>
-    </div>
-</div>
+</section>
