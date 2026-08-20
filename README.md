@@ -1,6 +1,20 @@
 Para o codigo funcionar precisa criar e conectar o banco de dados primeiro, a seguir estão os comandos do banco de dados;
 Os incertes que eu coloquei são apenas para testar, voce pode adicionar os incertes direto pelo programa em C#.
 
+## Requisitos para executar
+
+- .NET 10 SDK instalado.
+- SQL Server em execução com o banco `infiniteCoffee` criado.
+- Servidor configurado na string de conexão de `InfiniteCoffee2/Data/Banco.cs`.
+
+Para restaurar, compilar e iniciar:
+
+```powershell
+dotnet restore InfiniteCoffee2.slnx
+dotnet build InfiniteCoffee2.slnx --no-restore
+dotnet run --project InfiniteCoffee2/InfiniteCoffee2.csproj
+```
+
 
 ## IMPORTANTE ##
 ## No C#, Classe Banco, linha 9, voce vai encontrar isso:
