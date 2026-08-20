@@ -4,7 +4,7 @@ Estas regras valem para todo trabalho neste repositorio.
 
 ## Contexto tecnico
 
-- Aplicacao ASP.NET Core MVC em .NET 8.
+- Aplicacao ASP.NET Core MVC em .NET 10.
 - Views Razor em `InfiniteCoffee2/Views`.
 - Estilos estaticos em `InfiniteCoffee2/wwwroot`.
 - Acesso ao SQL Server centralizado em `InfiniteCoffee2/Data/Banco.cs`.
