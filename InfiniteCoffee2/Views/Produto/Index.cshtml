@@ -9,6 +9,7 @@
 }
 
 <a href="/Produto/Cadastrar" class="btn btn-primary mb-3">+ Novo Produto</a>
+<button type="button" class="btn btn-secondary mb-3" data-bs-toggle="modal" data-bs-target="#novoProdutoModal">Cadastrar com estoque</button>
 
 <table class="table table-striped">
     <thead>
@@ -17,6 +18,9 @@
             <th>Nome</th>
             <th>Preço</th>
             <th>Tipo</th>
+            <th>Quantidade</th>
+            <th>Código de barras</th>
+            <th>Descrição</th>
             <th>Ações</th>
         </tr>
     </thead>
@@ -28,6 +32,9 @@
                 <td>@p["nome_produto"]</td>
                 <td>R$ @p["preco"]</td>
                 <td>@p["tipo"]</td>
+                <td>@p["quantidade_estoque"]</td>
+                <td>@(p["codigo_barras"] is DBNull ? "Não informado" : p["codigo_barras"])</td>
+                <td>@(p["descricao"] is DBNull ? "" : p["descricao"])</td>
                 <td>
                     <a href="/Produto/Editar/@p["id_produto"]" class="btn btn-sm btn-warning">Editar</a>
                     <a href="/Produto/Excluir/@p["id_produto"]" class="btn btn-sm btn-danger"
@@ -37,3 +44,26 @@
         }
     </tbody>
 </table>
+
+<!-- Dialogo adicionado ao HTML existente para cadastrar produto e saldo inicial. -->
+<div class="modal fade" id="novoProdutoModal" tabindex="-1" aria-labelledby="novoProdutoTitulo" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="novoProdutoTitulo">Cadastrar produto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+            </div>
+            <form method="post" action="/Produto/Cadastrar">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3"><label class="form-label" for="produtoNome">Nome</label><input class="form-control" id="produtoNome" name="nome" maxlength="100" required /></div>
+                    <div class="mb-3"><label class="form-label" for="produtoDescricao">Descrição</label><textarea class="form-control" id="produtoDescricao" name="descricao" maxlength="500"></textarea></div>
+                    <div class="row"><div class="col-md-6 mb-3"><label class="form-label" for="produtoQuantidade">Quantidade inicial</label><input class="form-control" id="produtoQuantidade" name="quantidade" type="number" min="0" required /></div><div class="col-md-6 mb-3"><label class="form-label" for="produtoPreco">Preço (R$)</label><input class="form-control" id="produtoPreco" name="preco" type="number" step="0.01" min="0.01" required /></div></div>
+                    <div class="mb-3"><label class="form-label" for="produtoCodigo">Código de barras</label><input class="form-control" id="produtoCodigo" name="codigoBarras" maxlength="50" pattern="[0-9A-Za-z-]+" /></div>
+                    <div class="mb-3"><label class="form-label" for="produtoTipo">Tipo</label><select class="form-select" id="produtoTipo" name="tipo"><option>Bebida</option><option>Prato</option><option>Sobremesa</option></select></div>
+                </div>
+                <div class="modal-footer"><button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button type="submit" class="btn btn-primary">Salvar produto</button></div>
+            </form>
+        </div>
+    </div>
+</div>
