@@ -22,6 +22,10 @@ public sealed class EstoqueApiController : ControllerBase
         return Ok(Banco.ListarEstoqueBaixo(limite));
     }
 
+    /// <summary>Impressão digital do estoque. Use no front para recarregar só quando houver mudança.</summary>
+    [HttpGet("versao")]
+    public IActionResult Versao() => Ok(new { versao = Banco.ObterVersaoEstoque() });
+
     /// <summary>Registra uma saída e reduz o saldo de forma transacional.</summary>
     [HttpPost("saida")]
     public IActionResult Saida([FromBody] SaidaEstoqueRequest request)

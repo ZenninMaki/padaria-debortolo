@@ -69,6 +69,17 @@
 </div>
 
 <script>
-    // A lista de produtos tambem mostra o saldo e precisa acompanhar o estoque em tempo real.
-    setInterval(() => window.location.reload(), 5000);
+    // So recarrega quando os produtos realmente mudam, evitando interromper a digitacao.
+    let versaoAtual = null;
+    async function verificarVersao() {
+        try {
+            const resposta = await fetch('/api/produtos/versao', { cache: 'no-store' });
+            if (!resposta.ok) return;
+            const dados = await resposta.json();
+            if (versaoAtual === null) { versaoAtual = dados.versao; return; }
+            if (dados.versao !== versaoAtual) window.location.reload();
+        } catch (e) { /* ignora falhas de rede */ }
+    }
+    setInterval(verificarVersao, 5000);
+    verificarVersao();
 </script>

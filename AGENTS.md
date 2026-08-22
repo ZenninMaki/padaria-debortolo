@@ -48,10 +48,34 @@ Estas regras valem para todo trabalho neste repositorio.
 - O aplicativo mobile deve ser desenvolvido em Flutter usando Dart.
 - O projeto Flutter fica em `InfiniteCoffeeMobile` e deve permanecer separado do MVC.
 - O backend continua em ASP.NET Core .NET 10.
-- O Azure SQL/SQL Server permanece como fonte oficial dos dados.
+- O SQL Server permanece como fonte oficial dos dados.
 - Operacoes offline devem ser persistidas localmente e sincronizadas depois.
 - Nunca confirme uma venda sem revalidar o estoque no backend.
 - Toda alteracao de estoque deve gerar historico e respeitar transacao.
 - O PDV deve calcular valores no cliente apenas para exibicao; o servidor confirma o total.
 - Nao altere ou remova telas HTML existentes; adicione novas rotas ou arquivos quando necessario.
 - Apos alterar Dart, execute formatacao, analise, testes e build do alvo afetado.
+
+## Arquitetura alvo e plataformas
+
+- Um unico codigo Flutter (`infinite_coffee_app`) gera Windows (`flutter build windows`,
+  exe em `build\windows\x64\runner\Release\infinite_coffee_app.exe`) e mobile
+  (`flutter build apk`). Os dois sao o mesmo app em plataformas diferentes.
+- O app embute um banco local **Hive** (offline-first, sem SQLite) que ja vem populado apos o primeiro sync.
+- A "conversa entre Windows/mobile" e a web acontece SEMPRE via a API REST
+  (`/api/*` no SQL Server), nunca peer-to-peer. Venda no mobile sobe para o servidor e o
+  Windows enxerga no proximo pull; e vice-versa.
+- Sync bidirecional: `GET /api/sync/pull?since={token}` (server -> app) e
+  `POST /api/sync/push` (app -> server, operacoes offline). Detalhes na skill `sync-architecture`.
+- Rede: app Windows usa `http://localhost:5049`; app mobile na mesma LAN usa o IP da maquina
+  (ex.: `http://192.168.x.x:5049`). O CORS em `Program.cs` deve liberar essa origem.
+- SQL Server continua sendo a fonte da verdade; Hive no app e um espelho offline.
+
+## Preservacao de historico
+
+- Produto nunca deve ser apagado fisicamente quando possuir vendas, itens de pedido,
+  pagamentos ou movimentacoes vinculadas.
+- A exclusao de produto significa inativacao (`ativo = 0`) e estoque zero, preservando
+  pedidos, itens, pagamentos e movimentacoes para relatorios e auditoria.
+- Limpeza completa de dados de teste so pode ocorrer com confirmacao explicita do usuario,
+  sempre mantendo a estrutura, foreign keys e procedures do banco.

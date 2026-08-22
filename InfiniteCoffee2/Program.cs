@@ -1,3 +1,5 @@
+using InfiniteCoffee2.Data;
+
 namespace InfiniteCoffee2
 {
     public class Program
@@ -9,9 +11,15 @@ namespace InfiniteCoffee2
             builder.Services.AddControllersWithViews();
             builder.Services.AddCors(options =>
             {
-                // O aplicativo Flutter roda em outra porta durante o desenvolvimento.
+                // Em desenvolvimento o app Flutter (Windows, mobile ou web) conversa com esta API.
+                // Libera localhost, 127.0.0.1 e a faixa de IP de rede local (192.168./10.).
                 options.AddPolicy("FlutterDevelopment", policy => policy
-                    .SetIsOriginAllowed(origin => origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase) || origin.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase))
+                    .SetIsOriginAllowed(origin =>
+                        origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase) ||
+                        origin.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase) ||
+                        origin.Contains("192.168.") ||
+                        origin.Contains("10.0.") ||
+                        origin.Contains("10.0.2.2"))
                     .AllowAnyHeader()
                     .AllowAnyMethod());
             });
@@ -35,6 +43,9 @@ namespace InfiniteCoffee2
             });
 
             var app = builder.Build();
+
+            // Garante colunas de auditoria e triggers usados pelo sync bidirecional.
+            Banco.GarantirEstruturaSync();
 
             if (!app.Environment.IsDevelopment())
             {

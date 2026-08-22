@@ -1,0 +1,172 @@
+# Documentacao para IAs e Desenvolvedores
+
+Este arquivo e a fonte de contexto rapido do Infinite Coffee. Antes de alterar o projeto,
+leia este arquivo, `AGENTS.md`, `README.md` e a skill relacionada ao fluxo.
+
+## Identidade do projeto
+
+- Nome: Infinite Coffee.
+- Backend: ASP.NET Core MVC em .NET 10.
+- Banco oficial: SQL Server `localhost\KAIO`, database `infiniteCoffee`.
+- Acesso ao banco: `InfiniteCoffee2/Data/Banco.cs`.
+- API REST e Swagger: `InfiniteCoffee2/Controllers/Api`.
+- App Flutter atual: `C:\Users\kaiof\Desktop\infinite_coffee_app`.
+- Pasta Flutter versionada no repositorio: `InfiniteCoffeeMobile`.
+- Branch oficial para publicacao: `kaio`.
+
+## Ordem de leitura por tarefa
+
+1. `AGENTS.md` para regras obrigatorias.
+2. Este documento para arquitetura e contratos.
+3. Controller, View/modelo e `Banco.cs` do fluxo alterado.
+4. Skill especifica em `.opencode/skills/`.
+5. Testes e README antes de editar.
+
+## Arquitetura atual
+
+```text
+Windows .exe / Android .apk / Flutter Web
+             |
+             | HTTP REST
+             v
+ASP.NET Core em http://localhost:5049
+             |
+             v
+SQL Server infiniteCoffee (fonte da verdade)
+```
+
+- Windows e Android usam o mesmo codigo Flutter.
+- No app, o Hive e o espelho offline local; ele nao substitui o SQL Server.
+- O app nao conversa diretamente com outro dispositivo. Windows e celular conversam
+  entre si por meio da API e do SQL Server.
+- Windows no mesmo computador usa `http://localhost:5049`.
+- Emulador Android usa `http://10.0.2.2:5049`.
+- Celular fisico deve usar o IP LAN do computador, por exemplo `http://192.168.1.10:5049`.
+
+## Fluxo de inicializacao do Flutter
+
+1. `main.dart` cria `InventoryApi`, `LocalDatabase`, `SyncService` e `InventoryRepository`.
+2. `InventoryRepository.init()` abre as boxes Hive.
+3. Se nao houver produtos locais, executa o seed por `GET /api/sync/pull`.
+4. O `SyncService` agenda sincronizacao a cada 30 segundos e ao recuperar conectividade.
+5. `HomeScreen` mostra o Hive imediatamente e atualiza em segundo plano, sem trocar a tela
+   por spinner durante cada consulta.
+
+## Boxes Hive
+
+- `produtos`: catalogo local, chave `id_produto`.
+- `movimentacoes`: historico recebido do servidor, chave `id_movimentacao`.
+- `sync_queue`: operacoes offline com `tipo`, `clientUuid`, `payload`, `created_at`.
+- `sync_state`: token `last_pull` usado no proximo pull.
+
+Arquivos principais:
+
+- `lib/database/local_database.dart`: persistencia Hive e fila local.
+- `lib/services/sync_service.dart`: push/pull e agenda.
+- `lib/services/inventory_api.dart`: chamadas HTTP.
+- `lib/repositories/inventory_repository.dart`: regras de negocio offline-first.
+- `lib/screens/home_screen.dart`: dashboard, produtos, estoque e PDV.
+
+## Contratos REST
+
+### Produtos
+
+- `GET /api/produtos`: lista produtos ativos.
+- `GET /api/produtos/versao`: retorna uma versao leve do catalogo.
+- `POST /api/produtos`: cadastra produto.
+- `DELETE /api/produtos/{id}`: inativa o produto e zera o estoque; nao apaga historico.
+
+### Estoque
+
+- `GET /api/estoque?busca=...`: lista estoque ativo.
+- `GET /api/estoque/baixo?limite=5`: lista estoque baixo.
+- `GET /api/estoque/versao`: retorna versao leve do estoque.
+- `POST /api/estoque/entrada`: registra entrada.
+- `POST /api/estoque/saida`: registra saida.
+
+### Vendas e relatorios
+
+- `POST /api/vendas`: cria pedido, itens, pagamento e baixa estoque em uma transacao.
+- `GET /api/relatorios/vendas`: resumo de vendas do dia.
+- `GET /api/relatorios/estoque`: estoque e alertas.
+
+### Sincronizacao
+
+- `GET /api/sync/pull?since={token}` retorna `serverTime`, `produtosTotal`, `produtos` e
+  `movimentacoes`. Sem token, o app faz carga inicial.
+- `POST /api/sync/push` recebe `{ operacoes: [...] }`. Tipos atuais: `entrada`, `saida` e
+  `venda`. Cada operacao possui `clientUuid` e `payload`.
+- `GET /api/sync/versao` retorna as versoes de estoque e produtos.
+
+## Banco e integridade
+
+- `Banco.GarantirEstruturaSync()` cria, de forma idempotente, `ativo` e `modified_at` em
+  `Produtos`, alem dos triggers de auditoria.
+- `modified_at` usa UTC (`GETUTCDATE()`).
+- Entradas, saidas e vendas usam transacoes quando alteram estoque.
+- Foreign keys relacionam pedidos, itens, pagamentos, produtos, clientes, funcionarios e mesas.
+- Produto com historico nao deve sofrer `DELETE` fisico. A exclusao da interface e inativacao:
+  `ativo = 0` e `quantidade_estoque = 0`.
+- A limpeza completa executada no ambiente de testes removeu os registros, nao as tabelas.
+  Nunca repetir limpeza em outro ambiente sem confirmacao explicita.
+
+## Fluxo offline
+
+1. A tela le produtos do Hive.
+2. Entrada, saida e venda atualizam o saldo local de forma otimista.
+3. A operacao entra em `sync_queue`.
+4. Quando houver rede, o app envia a fila para `/api/sync/push`.
+5. O servidor valida estoque e grava dados oficiais.
+6. O app executa pull e substitui o saldo local pelo valor oficial.
+
+O servidor e quem decide conflitos de estoque. O total exibido no PDV e apenas previsao;
+o servidor valida o estoque e calcula o total final.
+
+## Comandos de desenvolvimento
+
+Backend:
+
+```powershell
+dotnet restore InfiniteCoffee2.slnx
+dotnet build InfiniteCoffee2.slnx --no-restore
+dotnet run --project InfiniteCoffee2/InfiniteCoffee2.csproj -- --urls=http://localhost:5049
+```
+
+Flutter:
+
+```powershell
+flutter pub get
+dart format lib test
+flutter analyze
+flutter test
+flutter build windows
+flutter build apk
+flutter run -d chrome --web-port 5050
+```
+
+Android Emulator:
+
+```powershell
+flutter emulators
+flutter devices
+flutter run -d emulator-5554
+```
+
+## Validacao obrigatoria
+
+- Depois de alterar C#/Razor: `dotnet build InfiniteCoffee2.slnx --no-restore` e reinicie o servidor.
+- Depois de alterar Dart: formatacao, `flutter analyze`, `flutter test` e build do alvo afetado.
+- Teste o fluxo online e offline, incluindo reinicio do servidor.
+- Confirme que uma exclusao retira o produto das listas sem apagar historico de venda.
+- Nao coloque senha ou credencial em codigo, README, skill, log ou commit.
+
+## Limitacoes e proximos cuidados
+
+- O Hive e populado pelo primeiro sync; ainda nao existe um arquivo de banco prepopulado
+  dentro do APK.
+- A fila usa `clientUuid`, mas o servidor ainda precisa de uma tabela de idempotencia para
+  impedir duplicacao se a mesma operacao for reenviada apos uma falha de resposta.
+- A inativacao incremental precisa de tombstones para remover automaticamente o produto de
+  outros dispositivos que ja tenham o cache; atualmente o dispositivo que executa a exclusao
+  remove o item localmente.
+- O APK exige Android SDK, NDK e uma imagem de emulador instalados.

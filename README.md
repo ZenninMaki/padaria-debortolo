@@ -1,3 +1,11 @@
+## Guia rapido
+
+Para entender o projeto completo, os contratos da API, o fluxo Flutter/Hive, o sync e as regras
+para outras IAs, leia primeiro [`DOCUMENTACAO-IA.md`](DOCUMENTACAO-IA.md) e [`AGENTS.md`](AGENTS.md).
+
+O backend usa SQL Server; o app Flutter usa Hive como espelho offline. Windows, Android e Web
+usam o mesmo codigo Flutter e conversam com o servidor pela API REST.
+
 Para o codigo funcionar precisa criar e conectar o banco de dados primeiro, a seguir estão os comandos do banco de dados;
 Os incertes que eu coloquei são apenas para testar, voce pode adicionar os incertes direto pelo programa em C#.
 
@@ -16,13 +24,14 @@ dotnet run --project InfiniteCoffee2/InfiniteCoffee2.csproj
 ```
 
 
-## IMPORTANTE ##
-## No C#, Classe Banco, linha 9, voce vai encontrar isso:
+## IMPORTANTE
+
+No C#, a classe `Banco` usa o SQL Server local:
 
 private static string connectionString =
-    "Server=KAIO;Database=infiniteCoffee;Trusted_Connection=True;TrustServerCertificate=True;";
+    "Server=localhost\\KAIO;Database=infiniteCoffee;Trusted_Connection=True;TrustServerCertificate=True;";
 
-Muda o "Server=KAIO" para "Server=NOME_DO_SERVIDOR"
+Se o seu servidor tiver outro nome, mude apenas `Server=localhost\\KAIO` para `Server=NOME_DO_SERVIDOR`.
 Voce pode pegar o Nome do Servidor assim que abrir o SQL server, na aba que abre, voce copia o Nome do Servidor e cola.
 
 ------ Esse é o banco de dados ------

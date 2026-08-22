@@ -1,17 +1,38 @@
-# infinite_coffee_app
+# Infinite Coffee Mobile
 
-A new Flutter project.
+Este diretorio e o projeto Flutter multiplataforma do Infinite Coffee. O mesmo codigo gera
+Android (`flutter build apk`), Windows (`flutter build windows`) e Web.
 
-## Getting Started
+## Fonte de contexto
 
-This project is a starting point for a Flutter application.
+Leia primeiro, na raiz do repositorio:
 
-A few resources to get you started if this is your first Flutter project:
+- `AGENTS.md`: regras obrigatorias de desenvolvimento e banco.
+- `DOCUMENTACAO-IA.md`: arquitetura, contratos REST, Hive, sync e comandos.
+- `Backlog-Sync.md`: plano de implementacao e validacao.
+- `.opencode/skills/`: regras por dominio para IAs e desenvolvedores.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Arquitetura
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- SQL Server e a fonte oficial dos dados.
+- Hive e o espelho local offline; nao e SQLite.
+- Windows usa `http://localhost:5049`, o emulador Android usa `http://10.0.2.2:5049`
+  e um celular fisico usa o IP LAN do computador.
+- `LocalDatabase` persiste produtos, movimentacoes, fila (`sync_queue`) e token (`sync_state`).
+- `SyncService` executa push/pull em segundo plano; a tela nao deve piscar durante sync.
+- Produto excluido e inativado no servidor (`ativo = 0`) para preservar historico de vendas.
+
+## Validacao
+
+```powershell
+flutter pub get
+dart format lib test
+flutter analyze
+flutter test
+flutter build windows
+flutter build apk
+```
+
+O codigo Flutter em desenvolvimento pode estar em
+`C:\Users\kaiof\Desktop\infinite_coffee_app`; ao publicar, sincronize as alteracoes
+com este diretorio versionado.

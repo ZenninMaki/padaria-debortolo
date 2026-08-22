@@ -11,6 +11,19 @@ public sealed class ProdutosApiController : ControllerBase
     [HttpGet]
     public IActionResult Listar() => Ok(Banco.ListarProdutos());
 
+    /// <summary>Impressão digital dos produtos. Use no front para recarregar só quando houver mudança.</summary>
+    [HttpGet("versao")]
+    public IActionResult Versao() => Ok(new { versao = Banco.ObterVersaoProdutos() });
+
+    /// <summary>Exclui um produto e suas movimentações de estoque. Falha se houver vendas vinculadas.</summary>
+    [HttpDelete("{id:int}")]
+    public IActionResult Excluir(int id)
+    {
+        if (!Banco.ExcluirProduto(id))
+            return BadRequest(new { mensagem = "Nao foi possivel excluir. O produto pode estar vinculado a vendas." });
+        return Ok(new { mensagem = "Produto excluido com sucesso." });
+    }
+
     /// <summary>Cadastra um produto com seu estoque inicial.</summary>
     [HttpPost]
     public IActionResult Cadastrar([FromBody] CriarProdutoRequest request)
