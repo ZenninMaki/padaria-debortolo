@@ -221,6 +221,22 @@ namespace InfiniteCoffee2.Data
             return true;
         }
 
+        public static bool RegistrarEntradaEstoque(int produtoId, int quantidade, string motivo)
+        {
+            GarantirTabelaMovimentacoes();
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+            using var cmd = new SqlCommand("UPDATE Produtos SET quantidade_estoque = quantidade_estoque + @quantidade WHERE id_produto = @produtoId; IF @@ROWCOUNT = 1 INSERT INTO MovimentacoesEstoque (produtoid, tipo_movimentacao, quantidade, motivo, data_movimentacao) VALUES (@produtoId, 'Entrada', @quantidade, @motivo, GETDATE());", conn, transaction);
+            cmd.Parameters.AddWithValue("@produtoId", produtoId);
+            cmd.Parameters.AddWithValue("@quantidade", quantidade);
+            cmd.Parameters.AddWithValue("@motivo", motivo.Trim());
+            var affected = cmd.ExecuteNonQuery();
+            if (affected == 0) return false;
+            transaction.Commit();
+            return true;
+        }
+
         private static void GarantirTabelaMovimentacoes()
         {
             using var conn = new SqlConnection(connectionString);

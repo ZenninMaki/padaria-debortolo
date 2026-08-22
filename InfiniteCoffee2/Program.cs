@@ -7,6 +7,14 @@ namespace InfiniteCoffee2
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddControllersWithViews();
+            builder.Services.AddCors(options =>
+            {
+                // O aplicativo Flutter roda em outra porta durante o desenvolvimento.
+                options.AddPolicy("FlutterDevelopment", policy => policy
+                    .SetIsOriginAllowed(origin => origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase) || origin.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase))
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
+            });
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
@@ -37,6 +45,7 @@ namespace InfiniteCoffee2
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+            app.UseCors("FlutterDevelopment");
 
             // Swagger fica disponível para o grupo testar as APIs durante o desenvolvimento.
             app.UseSwagger();
