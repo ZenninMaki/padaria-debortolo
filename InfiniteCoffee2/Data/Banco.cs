@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using Microsoft.Data.SqlClient;
+using InfiniteCoffee2.Models;
 
 namespace InfiniteCoffee2.Data
 {
@@ -235,6 +236,79 @@ namespace InfiniteCoffee2.Data
             if (affected == 0) return false;
             transaction.Commit();
             return true;
+        }
+
+        public static Dictionary<string, object> ResumoVendas()
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var cmd = new SqlCommand("SELECT (SELECT COUNT(*) FROM Pedidos WHERE CAST(datahora AS DATE) = CAST(GETDATE() AS DATE)) AS pedidos_hoje, (SELECT ISNULL(SUM(valor_total), 0) FROM Pagamentos p JOIN Pedidos pe ON pe.id_pedido = p.pedidoid WHERE CAST(pe.datahora AS DATE) = CAST(GETDATE() AS DATE)) AS faturamento_hoje, (SELECT ISNULL(SUM(i.quantidade), 0) FROM Itens_Pedidos i JOIN Pedidos pe ON pe.id_pedido = i.pedidoid WHERE CAST(pe.datahora AS DATE) = CAST(GETDATE() AS DATE)) AS itens_vendidos", conn);
+            using var reader = cmd.ExecuteReader();
+            reader.Read();
+            return new Dictionary<string, object>
+            {
+                ["pedidos_hoje"] = reader["pedidos_hoje"],
+                ["faturamento_hoje"] = reader["faturamento_hoje"],
+                ["itens_vendidos"] = reader["itens_vendidos"]
+            };
+        }
+
+        public static int FinalizarVenda(int? clienteId, int? mesaId, int? funcionarioId, string formaPagamento, IEnumerable<SaleItemData> itens)
+        {
+            GarantirTabelaMovimentacoes();
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+            try
+            {
+                var itemList = itens.ToList();
+                if (itemList.Count == 0) return 0;
+
+                using var pedido = new SqlCommand("INSERT INTO Pedidos (mesaid, funcionarioid, clienteid, datahora, status_pedido) OUTPUT INSERTED.id_pedido VALUES (@mesa, @funcionario, @cliente, GETDATE(), 'Finalizado')", conn, transaction);
+                pedido.Parameters.AddWithValue("@mesa", clienteId.HasValue && mesaId.HasValue ? mesaId.Value : DBNull.Value);
+                pedido.Parameters.AddWithValue("@funcionario", funcionarioId.HasValue ? funcionarioId.Value : DBNull.Value);
+                pedido.Parameters.AddWithValue("@cliente", clienteId.HasValue ? clienteId.Value : DBNull.Value);
+                var pedidoId = Convert.ToInt32(pedido.ExecuteScalar());
+                decimal total = 0;
+
+                foreach (var item in itemList)
+                {
+                    if (item.Quantidade < 1) return 0;
+                    using var produto = new SqlCommand("SELECT preco FROM Produtos WHERE id_produto = @produto", conn, transaction);
+                    produto.Parameters.AddWithValue("@produto", item.ProdutoId);
+                    var precoObject = produto.ExecuteScalar();
+                    if (precoObject is null) return 0;
+                    var preco = Convert.ToDecimal(precoObject);
+                    using var baixa = new SqlCommand("UPDATE Produtos SET quantidade_estoque = quantidade_estoque - @quantidade WHERE id_produto = @produto AND quantidade_estoque >= @quantidade", conn, transaction);
+                    baixa.Parameters.AddWithValue("@produto", item.ProdutoId);
+                    baixa.Parameters.AddWithValue("@quantidade", item.Quantidade);
+                    if (baixa.ExecuteNonQuery() != 1) return 0;
+                    using var itemCommand = new SqlCommand("INSERT INTO Itens_Pedidos (pedidoid, produtoid, quantidade, preco_unitario) VALUES (@pedido, @produto, @quantidade, @preco)", conn, transaction);
+                    itemCommand.Parameters.AddWithValue("@pedido", pedidoId);
+                    itemCommand.Parameters.AddWithValue("@produto", item.ProdutoId);
+                    itemCommand.Parameters.AddWithValue("@quantidade", item.Quantidade);
+                    itemCommand.Parameters.AddWithValue("@preco", preco);
+                    itemCommand.ExecuteNonQuery();
+                    using var movimento = new SqlCommand("INSERT INTO MovimentacoesEstoque (produtoid, tipo_movimentacao, quantidade, motivo, data_movimentacao) VALUES (@produto, 'Saida', @quantidade, 'Venda PDV', GETDATE())", conn, transaction);
+                    movimento.Parameters.AddWithValue("@produto", item.ProdutoId);
+                    movimento.Parameters.AddWithValue("@quantidade", item.Quantidade);
+                    movimento.ExecuteNonQuery();
+                    total += preco * item.Quantidade;
+                }
+
+                using var pagamento = new SqlCommand("INSERT INTO Pagamentos (pedidoid, forma_pagamento, valor_total) VALUES (@pedido, @forma, @total)", conn, transaction);
+                pagamento.Parameters.AddWithValue("@pedido", pedidoId);
+                pagamento.Parameters.AddWithValue("@forma", formaPagamento);
+                pagamento.Parameters.AddWithValue("@total", total);
+                pagamento.ExecuteNonQuery();
+                transaction.Commit();
+                return pedidoId;
+            }
+            catch
+            {
+                transaction.Rollback();
+                return 0;
+            }
         }
 
         private static void GarantirTabelaMovimentacoes()

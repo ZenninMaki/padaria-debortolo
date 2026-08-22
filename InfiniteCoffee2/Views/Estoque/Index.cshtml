@@ -20,6 +20,13 @@
     </form>
 </div>
 
+@section Scripts {
+    <script>
+        // Atualiza a tela para refletir alteracoes feitas pelo aplicativo ou por outro caixa.
+        setInterval(() => window.location.reload(), 5000);
+    </script>
+}
+
 <form method="get" action="/Estoque" class="d-flex gap-2 mb-3"><input class="form-control" name="busca" value="@ViewBag.Busca" placeholder="Pesquisar produto ou código de barras" /><button class="btn btn-primary" type="submit">Pesquisar</button></form>
 <div class="card p-3 mb-4"><h3>Saldo dos produtos</h3><div class="table-responsive"><table class="table table-striped"><thead><tr><th>Produto</th><th>Código</th><th>Saldo</th><th>Situação</th></tr></thead><tbody>@foreach (var produto in (List<Dictionary<string, object>>)Model) { var baixo = Convert.ToInt32(produto["quantidade_estoque"]) <= 5; <tr><td>@produto["nome_produto"]</td><td>@(produto["codigo_barras"] is DBNull ? "Não informado" : produto["codigo_barras"])</td><td>@produto["quantidade_estoque"]</td><td>@(baixo ? "Estoque baixo" : "Normal")</td></tr>}</tbody></table></div></div>
 <div class="card p-3"><h3>Histórico de saídas</h3><div class="table-responsive"><table class="table table-striped"><thead><tr><th>Data</th><th>Produto</th><th>Quantidade</th><th>Motivo</th></tr></thead><tbody>@foreach (var movimento in movimentacoes) { <tr><td>@movimento["data_movimentacao"]</td><td>@movimento["nome_produto"]</td><td>@movimento["quantidade"]</td><td>@movimento["motivo"]</td></tr> }</tbody></table></div></div>

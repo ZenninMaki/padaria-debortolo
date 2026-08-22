@@ -42,3 +42,16 @@ Estas regras valem para todo trabalho neste repositorio.
 - Antes de commit, confira `git status`, `git diff` e o resultado do build.
 - Nao use `git reset --hard`, `git checkout --` ou force push para apagar trabalho existente.
 - Use mensagens de commit curtas e descreva uma mudanca coesa.
+
+## Regras adicionais do aplicativo mobile
+
+- O aplicativo mobile deve ser desenvolvido em Flutter usando Dart.
+- O projeto Flutter fica em `InfiniteCoffeeMobile` e deve permanecer separado do MVC.
+- O backend continua em ASP.NET Core .NET 10.
+- O Azure SQL/SQL Server permanece como fonte oficial dos dados.
+- Operacoes offline devem ser persistidas localmente e sincronizadas depois.
+- Nunca confirme uma venda sem revalidar o estoque no backend.
+- Toda alteracao de estoque deve gerar historico e respeitar transacao.
+- O PDV deve calcular valores no cliente apenas para exibicao; o servidor confirma o total.
+- Nao altere ou remova telas HTML existentes; adicione novas rotas ou arquivos quando necessario.
+- Apos alterar Dart, execute formatacao, analise, testes e build do alvo afetado.
