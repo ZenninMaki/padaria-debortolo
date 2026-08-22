@@ -1,3 +1,5 @@
+using InfiniteCoffee2.Data;
+
 namespace InfiniteCoffee2
 {
     public class Program
@@ -7,6 +9,20 @@ namespace InfiniteCoffee2
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddControllersWithViews();
+            builder.Services.AddCors(options =>
+            {
+                // Em desenvolvimento o app Flutter (Windows, mobile ou web) conversa com esta API.
+                // Libera localhost, 127.0.0.1 e a faixa de IP de rede local (192.168./10.).
+                options.AddPolicy("FlutterDevelopment", policy => policy
+                    .SetIsOriginAllowed(origin =>
+                        origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase) ||
+                        origin.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase) ||
+                        origin.Contains("192.168.") ||
+                        origin.Contains("10.0.") ||
+                        origin.Contains("10.0.2.2"))
+                    .AllowAnyHeader()
+                    .AllowAnyMethod());
+            });
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(options =>
             {
@@ -28,6 +44,9 @@ namespace InfiniteCoffee2
 
             var app = builder.Build();
 
+            // Garante colunas de auditoria e triggers usados pelo sync bidirecional.
+            Banco.GarantirEstruturaSync();
+
             if (!app.Environment.IsDevelopment())
             {
                 app.UseExceptionHandler("/Home/Error");
@@ -37,6 +56,7 @@ namespace InfiniteCoffee2
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+            app.UseCors("FlutterDevelopment");
 
             // Swagger fica disponível para o grupo testar as APIs durante o desenvolvimento.
             app.UseSwagger();

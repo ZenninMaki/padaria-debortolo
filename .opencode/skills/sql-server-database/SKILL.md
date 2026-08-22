@@ -19,7 +19,7 @@ Trate o banco como sistema persistente e compartilhado, nunca como dados descart
 - Use parametros em comandos SQL; nao concatene entrada do usuario.
 - Mantenha nomes e parametros das procedures compativeis com o C# existente.
 - Nao use cascade delete para contornar erro de foreign key sem aprovacao explicita.
-- Para registros com historico, prefira bloqueio com mensagem clara ou estrategia de arquivamento documentada.
+- Para produtos com historico, use inativacao (`ativo = 0`) e estoque zero; nunca apague vendas ou itens.
 - Scripts de schema devem ser versionados, revisaveis e, quando possivel, idempotentes.
 - Nunca inclua credenciais em scripts, commits ou mensagens de erro.
 
@@ -29,3 +29,4 @@ Trate o banco como sistema persistente e compartilhado, nunca como dados descart
 - Valide leitura, inclusao, alteracao e exclusao de um registro sem dependencias.
 - Valide que a tentativa de excluir registro referenciado falha de forma controlada.
 - Rode o build da aplicacao depois de mudar o acesso ao banco.
+- Ao alterar produto, valide que ele desaparece das consultas ativas sem desaparecer dos relatorios historicos.

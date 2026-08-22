@@ -1,5 +1,6 @@
 ﻿using System.Data;
 using Microsoft.Data.SqlClient;
+using InfiniteCoffee2.Models;
 
 namespace InfiniteCoffee2.Data
 {
@@ -102,7 +103,7 @@ namespace InfiniteCoffee2.Data
             {
                 conn.Open();
                 // Consulta direta mantém a tela compatível mesmo antes das procedures opcionais.
-                var cmd = new SqlCommand("SELECT id_produto, nome_produto, preco, tipo, quantidade_estoque, codigo_barras, descricao FROM Produtos ORDER BY nome_produto", conn);
+                var cmd = new SqlCommand("SELECT id_produto, nome_produto, preco, tipo, quantidade_estoque, codigo_barras, descricao FROM Produtos WHERE ativo = 1 ORDER BY nome_produto", conn);
                 var reader = cmd.ExecuteReader();
                 while (reader.Read())
                     lista.Add(new Dictionary<string, object>
@@ -149,15 +150,16 @@ namespace InfiniteCoffee2.Data
             }
         }
 
-        public static void ExcluirProduto(int id)
+        public static bool ExcluirProduto(int id)
         {
-            using (var conn = new SqlConnection(connectionString))
-            {
-                conn.Open();
-                var cmd = new SqlCommand("sp_ExcluirProduto", conn) { CommandType = CommandType.StoredProcedure };
-                cmd.Parameters.AddWithValue("@id", id);
-                cmd.ExecuteNonQuery();
-            }
+            // Produtos podem ser referenciados por Itens_Pedidos. Inativar preserva
+            // o historico e remove o item apenas das consultas operacionais.
+            GarantirEstruturaSync();
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var cmd = new SqlCommand("UPDATE Produtos SET ativo = 0, quantidade_estoque = 0 WHERE id_produto = @id AND ativo = 1", conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            return cmd.ExecuteNonQuery() == 1;
         }
 
         // =========================
@@ -170,7 +172,7 @@ namespace InfiniteCoffee2.Data
             var lista = new List<Dictionary<string, object>>();
             using var conn = new SqlConnection(connectionString);
             conn.Open();
-            using var cmd = new SqlCommand("SELECT id_produto, nome_produto, preco, tipo, quantidade_estoque, codigo_barras, descricao FROM Produtos WHERE @busca = '' OR nome_produto LIKE '%' + @busca + '%' OR codigo_barras LIKE '%' + @busca + '%' ORDER BY nome_produto", conn);
+            using var cmd = new SqlCommand("SELECT id_produto, nome_produto, preco, tipo, quantidade_estoque, codigo_barras, descricao FROM Produtos WHERE ativo = 1 AND (@busca = '' OR nome_produto LIKE '%' + @busca + '%' OR codigo_barras LIKE '%' + @busca + '%') ORDER BY nome_produto", conn);
             cmd.Parameters.AddWithValue("@busca", (busca ?? string.Empty).Trim());
             using var reader = cmd.ExecuteReader();
             while (reader.Read())
@@ -205,6 +207,128 @@ namespace InfiniteCoffee2.Data
             return lista;
         }
 
+        /// <summary>
+        /// Retorna uma impressão digital leve dos dados de estoque/produtos.
+        /// Muda sempre que um produto é criado, editado, excluído ou seu saldo se altera.
+        /// Usado pelo front para só recarregar a página quando o banco realmente muda.
+        /// </summary>
+        public static string ObterVersaoEstoque()
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var cmd = new SqlCommand(
+                "SELECT (SELECT COUNT(*) FROM Produtos) AS produtos, " +
+                "(SELECT ISNULL(SUM(CAST(quantidade_estoque AS BIGINT)), 0) FROM Produtos) AS saldo, " +
+                "(SELECT ISNULL(MAX(id_movimentacao), 0) FROM MovimentacoesEstoque) AS mov, " +
+                "(SELECT ISNULL(SUM(preco), 0) FROM Produtos) AS preco", conn);
+            using var reader = cmd.ExecuteReader();
+            if (reader.Read())
+                return $"{reader["produtos"]}|{reader["saldo"]}|{reader["mov"]}|{Convert.ToDecimal(reader["preco"]):F2}";
+            return "0|0|0|0.00";
+        }
+
+        /// <summary>
+        /// Impressão digital dos produtos (captura qualquer edição de nome, preço, tipo, saldo ou código).
+        /// </summary>
+        public static string ObterVersaoProdutos()
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var cmd = new SqlCommand(
+                "SELECT ISNULL(CHECKSUM_AGG(BINARY_CHECKSUM(id_produto, nome_produto, preco, tipo, quantidade_estoque, ISNULL(codigo_barras, ''), ISNULL(descricao, ''))), 0) FROM Produtos", conn);
+            var valor = cmd.ExecuteScalar();
+            return valor?.ToString() ?? "0";
+        }
+
+        /// <summary>
+        /// Garante as colunas de auditoria (modified_at) e triggers que mantem a "versao"
+        /// de cada linha, usadas pelo sync bidirecional com o app Flutter. Idempotente.
+        /// </summary>
+        public static void GarantirEstruturaSync()
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            // Estrutura de sync criada sob demanda: banco novo e banco existente
+            // recebem a mesma evolucao sem DROP, TRUNCATE ou perda de dados.
+            using var cmd = new SqlCommand(@"
+                IF COL_LENGTH('dbo.Produtos', 'ativo') IS NULL
+                    ALTER TABLE dbo.Produtos ADD ativo BIT NOT NULL CONSTRAINT DF_Produtos_ativo DEFAULT 1;
+                IF COL_LENGTH('dbo.Produtos', 'modified_at') IS NULL
+                    ALTER TABLE dbo.Produtos ADD modified_at DATETIME NOT NULL CONSTRAINT DF_Produtos_modified DEFAULT GETUTCDATE();
+                IF COL_LENGTH('dbo.MovimentacoesEstoque', 'modified_at') IS NULL
+                    ALTER TABLE dbo.MovimentacoesEstoque ADD modified_at DATETIME NOT NULL CONSTRAINT DF_Mov_modified DEFAULT GETUTCDATE();
+                IF OBJECT_ID(N'dbo.trg_Produtos_sync', N'TR') IS NOT NULL DROP TRIGGER dbo.trg_Produtos_sync;
+                EXEC('CREATE TRIGGER dbo.trg_Produtos_sync ON dbo.Produtos AFTER INSERT, UPDATE AS
+                    UPDATE p SET modified_at = GETUTCDATE() FROM dbo.Produtos p JOIN inserted i ON i.id_produto = p.id_produto;');
+                IF OBJECT_ID(N'dbo.trg_Movimentacoes_sync', N'TR') IS NOT NULL DROP TRIGGER dbo.trg_Movimentacoes_sync;
+                EXEC('CREATE TRIGGER dbo.trg_Movimentacoes_sync ON dbo.MovimentacoesEstoque AFTER INSERT, UPDATE AS
+                    UPDATE m SET modified_at = GETUTCDATE() FROM dbo.MovimentacoesEstoque m JOIN inserted i ON i.id_movimentacao = m.id_movimentacao;');
+            ", conn);
+            cmd.ExecuteNonQuery();
+        }
+
+        /// <summary>
+        /// Retorna os produtos e movimentacoes alterados desde <paramref name="since"/>.
+        /// Usado pelo pull do app Flutter (sync bidirecional).
+        /// </summary>
+        public static SyncSnapshot PullSync(DateTime since)
+        {
+            GarantirEstruturaSync();
+            var snapshot = new SyncSnapshot { ServerTime = DateTime.UtcNow };
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+
+            // Diferencia "nenhuma alteracao" de uma limpeza completa do servidor,
+            // permitindo que o app remova um cache Hive antigo com seguranca.
+            using (var count = new SqlCommand("SELECT COUNT(*) FROM Produtos WHERE ativo = 1", conn))
+                snapshot.ProdutosTotal = Convert.ToInt32(count.ExecuteScalar());
+
+            using (var cmd = new SqlCommand("SELECT id_produto, nome_produto, preco, tipo, quantidade_estoque, codigo_barras, descricao, modified_at FROM Produtos WHERE ativo = 1 AND modified_at > @since ORDER BY id_produto", conn))
+            {
+                cmd.Parameters.AddWithValue("@since", since);
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                    snapshot.Produtos.Add(new Dictionary<string, object>
+                    {
+                        ["id_produto"] = reader["id_produto"],
+                        ["nome_produto"] = reader["nome_produto"],
+                        ["preco"] = reader["preco"],
+                        ["tipo"] = reader["tipo"],
+                        ["quantidade_estoque"] = reader["quantidade_estoque"],
+                        ["codigo_barras"] = Convert.IsDBNull(reader["codigo_barras"]) ? null! : reader["codigo_barras"],
+                        ["descricao"] = Convert.IsDBNull(reader["descricao"]) ? null! : reader["descricao"],
+                        ["modified_at"] = DateTime.SpecifyKind(Convert.ToDateTime(reader["modified_at"]), DateTimeKind.Utc).ToString("o")
+                    });
+            }
+
+            using (var cmd = new SqlCommand("SELECT id_movimentacao, produtoid, tipo_movimentacao, quantidade, motivo, data_movimentacao, modified_at FROM MovimentacoesEstoque WHERE modified_at > @since ORDER BY id_movimentacao", conn))
+            {
+                cmd.Parameters.AddWithValue("@since", since);
+                using var reader = cmd.ExecuteReader();
+                while (reader.Read())
+                    snapshot.Movimentacoes.Add(new Dictionary<string, object>
+                    {
+                        ["id_movimentacao"] = reader["id_movimentacao"],
+                        ["produtoid"] = reader["produtoid"],
+                        ["tipo_movimentacao"] = reader["tipo_movimentacao"],
+                        ["quantidade"] = reader["quantidade"],
+                        ["motivo"] = reader["motivo"],
+                        ["data_movimentacao"] = reader["data_movimentacao"],
+                        ["modified_at"] = DateTime.SpecifyKind(Convert.ToDateTime(reader["modified_at"]), DateTimeKind.Utc).ToString("o")
+                    });
+            }
+
+            return snapshot;
+        }
+
+        public sealed class SyncSnapshot
+        {
+            public DateTime ServerTime { get; set; }
+            public int ProdutosTotal { get; set; }
+            public List<Dictionary<string, object>> Produtos { get; set; } = new();
+            public List<Dictionary<string, object>> Movimentacoes { get; set; } = new();
+        }
+
         public static bool RegistrarSaidaEstoque(int produtoId, int quantidade, string motivo)
         {
             GarantirTabelaMovimentacoes();
@@ -219,6 +343,95 @@ namespace InfiniteCoffee2.Data
             if (affected == 0) return false;
             transaction.Commit();
             return true;
+        }
+
+        public static bool RegistrarEntradaEstoque(int produtoId, int quantidade, string motivo)
+        {
+            GarantirTabelaMovimentacoes();
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+            using var cmd = new SqlCommand("UPDATE Produtos SET quantidade_estoque = quantidade_estoque + @quantidade WHERE id_produto = @produtoId; IF @@ROWCOUNT = 1 INSERT INTO MovimentacoesEstoque (produtoid, tipo_movimentacao, quantidade, motivo, data_movimentacao) VALUES (@produtoId, 'Entrada', @quantidade, @motivo, GETDATE());", conn, transaction);
+            cmd.Parameters.AddWithValue("@produtoId", produtoId);
+            cmd.Parameters.AddWithValue("@quantidade", quantidade);
+            cmd.Parameters.AddWithValue("@motivo", motivo.Trim());
+            var affected = cmd.ExecuteNonQuery();
+            if (affected == 0) return false;
+            transaction.Commit();
+            return true;
+        }
+
+        public static Dictionary<string, object> ResumoVendas()
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var cmd = new SqlCommand("SELECT (SELECT COUNT(*) FROM Pedidos WHERE CAST(datahora AS DATE) = CAST(GETDATE() AS DATE)) AS pedidos_hoje, (SELECT ISNULL(SUM(valor_total), 0) FROM Pagamentos p JOIN Pedidos pe ON pe.id_pedido = p.pedidoid WHERE CAST(pe.datahora AS DATE) = CAST(GETDATE() AS DATE)) AS faturamento_hoje, (SELECT ISNULL(SUM(i.quantidade), 0) FROM Itens_Pedidos i JOIN Pedidos pe ON pe.id_pedido = i.pedidoid WHERE CAST(pe.datahora AS DATE) = CAST(GETDATE() AS DATE)) AS itens_vendidos", conn);
+            using var reader = cmd.ExecuteReader();
+            reader.Read();
+            return new Dictionary<string, object>
+            {
+                ["pedidos_hoje"] = reader["pedidos_hoje"],
+                ["faturamento_hoje"] = reader["faturamento_hoje"],
+                ["itens_vendidos"] = reader["itens_vendidos"]
+            };
+        }
+
+        public static int FinalizarVenda(int? clienteId, int? mesaId, int? funcionarioId, string formaPagamento, IEnumerable<SaleItemData> itens)
+        {
+            GarantirTabelaMovimentacoes();
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+            try
+            {
+                var itemList = itens.ToList();
+                if (itemList.Count == 0) return 0;
+
+                using var pedido = new SqlCommand("INSERT INTO Pedidos (mesaid, funcionarioid, clienteid, datahora, status_pedido) OUTPUT INSERTED.id_pedido VALUES (@mesa, @funcionario, @cliente, GETDATE(), 'Finalizado')", conn, transaction);
+                pedido.Parameters.AddWithValue("@mesa", clienteId.HasValue && mesaId.HasValue ? mesaId.Value : DBNull.Value);
+                pedido.Parameters.AddWithValue("@funcionario", funcionarioId.HasValue ? funcionarioId.Value : DBNull.Value);
+                pedido.Parameters.AddWithValue("@cliente", clienteId.HasValue ? clienteId.Value : DBNull.Value);
+                var pedidoId = Convert.ToInt32(pedido.ExecuteScalar());
+                decimal total = 0;
+
+                foreach (var item in itemList)
+                {
+                    if (item.Quantidade < 1) return 0;
+                    using var produto = new SqlCommand("SELECT preco FROM Produtos WHERE id_produto = @produto", conn, transaction);
+                    produto.Parameters.AddWithValue("@produto", item.ProdutoId);
+                    var precoObject = produto.ExecuteScalar();
+                    if (precoObject is null) return 0;
+                    var preco = Convert.ToDecimal(precoObject);
+                    using var baixa = new SqlCommand("UPDATE Produtos SET quantidade_estoque = quantidade_estoque - @quantidade WHERE id_produto = @produto AND quantidade_estoque >= @quantidade", conn, transaction);
+                    baixa.Parameters.AddWithValue("@produto", item.ProdutoId);
+                    baixa.Parameters.AddWithValue("@quantidade", item.Quantidade);
+                    if (baixa.ExecuteNonQuery() != 1) return 0;
+                    using var itemCommand = new SqlCommand("INSERT INTO Itens_Pedidos (pedidoid, produtoid, quantidade, preco_unitario) VALUES (@pedido, @produto, @quantidade, @preco)", conn, transaction);
+                    itemCommand.Parameters.AddWithValue("@pedido", pedidoId);
+                    itemCommand.Parameters.AddWithValue("@produto", item.ProdutoId);
+                    itemCommand.Parameters.AddWithValue("@quantidade", item.Quantidade);
+                    itemCommand.Parameters.AddWithValue("@preco", preco);
+                    itemCommand.ExecuteNonQuery();
+                    using var movimento = new SqlCommand("INSERT INTO MovimentacoesEstoque (produtoid, tipo_movimentacao, quantidade, motivo, data_movimentacao) VALUES (@produto, 'Saida', @quantidade, 'Venda PDV', GETDATE())", conn, transaction);
+                    movimento.Parameters.AddWithValue("@produto", item.ProdutoId);
+                    movimento.Parameters.AddWithValue("@quantidade", item.Quantidade);
+                    movimento.ExecuteNonQuery();
+                    total += preco * item.Quantidade;
+                }
+
+                using var pagamento = new SqlCommand("INSERT INTO Pagamentos (pedidoid, forma_pagamento, valor_total) VALUES (@pedido, @forma, @total)", conn, transaction);
+                pagamento.Parameters.AddWithValue("@pedido", pedidoId);
+                pagamento.Parameters.AddWithValue("@forma", formaPagamento);
+                pagamento.Parameters.AddWithValue("@total", total);
+                pagamento.ExecuteNonQuery();
+                transaction.Commit();
+                return pedidoId;
+            }
+            catch
+            {
+                transaction.Rollback();
+                return 0;
+            }
         }
 
         private static void GarantirTabelaMovimentacoes()
