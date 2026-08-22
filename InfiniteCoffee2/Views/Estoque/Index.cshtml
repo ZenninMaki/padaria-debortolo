@@ -1,0 +1,25 @@
+@{ ViewBag.Title = "Estoque"; var alertas = (List<Dictionary<string, object>>)ViewBag.Alertas; var movimentacoes = (List<Dictionary<string, object>>)ViewBag.Movimentacoes; }
+
+<div class="d-flex justify-content-between align-items-center mb-3"><div><p class="eyebrow">CONTROLE DA CASA</p><h2>Estoque</h2></div><a href="/" class="btn btn-outline-secondary">&#8592; Voltar</a></div>
+
+@if (TempData["Mensagem"] != null) { <div class="alert alert-info">@TempData["Mensagem"]</div> }
+@if (alertas.Count > 0)
+{
+    <div class="alert alert-warning"><strong>Alerta de estoque baixo:</strong> @string.Join(", ", alertas.Select(item => $"{item["nome_produto"]} ({item["quantidade_estoque"]} un.)"))</div>
+}
+
+<div class="card p-4 mb-4">
+    <h3>Registrar saída</h3>
+    <p class="text-muted">A saída só é aceita quando houver saldo suficiente.</p>
+    <form method="post" action="/Estoque/Saida" class="row g-3">
+        @Html.AntiForgeryToken()
+        <div class="col-md-5"><label class="form-label" for="produtoId">Produto</label><select class="form-select" id="produtoId" name="produtoId" required><option value="">Selecione um produto</option>@foreach (var produto in (List<Dictionary<string, object>>)Model) { <option value="@produto["id_produto"]">@produto["nome_produto"] - @produto["quantidade_estoque"] un.</option> }</select></div>
+        <div class="col-md-2"><label class="form-label" for="quantidade">Quantidade</label><input class="form-control" id="quantidade" name="quantidade" type="number" min="1" required /></div>
+        <div class="col-md-5"><label class="form-label" for="motivo">Motivo</label><input class="form-control" id="motivo" name="motivo" maxlength="200" required placeholder="Venda, perda ou ajuste" /></div>
+        <div class="col-12"><button class="btn btn-primary" type="submit">Confirmar saída</button></div>
+    </form>
+</div>
+
+<form method="get" action="/Estoque" class="d-flex gap-2 mb-3"><input class="form-control" name="busca" value="@ViewBag.Busca" placeholder="Pesquisar produto ou código de barras" /><button class="btn btn-primary" type="submit">Pesquisar</button></form>
+<div class="card p-3 mb-4"><h3>Saldo dos produtos</h3><div class="table-responsive"><table class="table table-striped"><thead><tr><th>Produto</th><th>Código</th><th>Saldo</th><th>Situação</th></tr></thead><tbody>@foreach (var produto in (List<Dictionary<string, object>>)Model) { var baixo = Convert.ToInt32(produto["quantidade_estoque"]) <= 5; <tr><td>@produto["nome_produto"]</td><td>@(produto["codigo_barras"] is DBNull ? "Não informado" : produto["codigo_barras"])</td><td>@produto["quantidade_estoque"]</td><td>@(baixo ? "Estoque baixo" : "Normal")</td></tr>}</tbody></table></div></div>
+<div class="card p-3"><h3>Histórico de saídas</h3><div class="table-responsive"><table class="table table-striped"><thead><tr><th>Data</th><th>Produto</th><th>Quantidade</th><th>Motivo</th></tr></thead><tbody>@foreach (var movimento in movimentacoes) { <tr><td>@movimento["data_movimentacao"]</td><td>@movimento["nome_produto"]</td><td>@movimento["quantidade"]</td><td>@movimento["motivo"]</td></tr> }</tbody></table></div></div>

@@ -17,6 +17,8 @@ Estas regras valem para todo trabalho neste repositorio.
 
 - Inspecione Controller, View, Banco.cs e README antes de alterar um fluxo existente.
 - Preserve as rotas, nomes de campos, parametros de procedures e contratos entre Controller e View.
+- Telas, HTML, CSS e rotas ja criados nao podem ser alterados, movidos ou removidos.
+- Novas funcionalidades devem ser adicionadas em novas telas, arquivos ou rotas, sem modificar o que ja existe.
 - Prefira a menor alteracao correta; nao reescreva a arquitetura sem necessidade concreta.
 - Nao coloque senhas, tokens ou strings de conexao com credenciais no repositorio.
 - Toda operacao de escrita deve validar entrada e retornar feedback compreensivel ao usuario.
@@ -39,7 +41,9 @@ Estas regras valem para todo trabalho neste repositorio.
 ## Git e publicacao
 
 - O remoto oficial e `https://github.com/pideias/pideias-infinittecoffee.git`.
-- Todo push deste projeto deve ser feito na branch `CdmEdu`.
+- Todo commit e push de desenvolvimento deste projeto deve ser feito na branch `CdmEdu`.
+- A `master` recebe mudancas somente por merge aprovado da `CdmEdu`.
+- Antes de qualquer commit ou push de desenvolvimento, confirme que a branch atual e `CdmEdu`.
 - Antes de commit, confira `git status`, `git diff` e o resultado do build.
 - Nao use `git reset --hard`, `git checkout --` ou force push para apagar trabalho existente.
 - Use mensagens de commit curtas e descreva uma mudanca coesa.
