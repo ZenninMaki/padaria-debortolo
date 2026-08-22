@@ -5,8 +5,11 @@ Estas regras valem para todo trabalho neste repositorio.
 ## Contexto tecnico
 
 - Aplicacao ASP.NET Core MVC em .NET 10.
+- O projeto deve permanecer em .NET 10 ou superior; nunca regredir para .NET 8 ou outra versao inferior.
 - Views Razor em `InfiniteCoffee2/Views`.
 - Estilos estaticos em `InfiniteCoffee2/wwwroot`.
+- A `CdmEdu` e a fonte oficial do HTML e do visual do sistema.
+- Somente a `CdmEdu` pode criar ou alterar HTML, Views Razor, CSS e componentes visuais; outras branches devem receber essas mudancas por merge.
 - Acesso ao SQL Server centralizado em `InfiniteCoffee2/Data/Banco.cs`.
 - O banco usa procedures armazenadas e chaves estrangeiras para manter integridade.
 
@@ -20,6 +23,7 @@ Estas regras valem para todo trabalho neste repositorio.
 - Exclusoes devem ser `POST`, pedir confirmacao na interface e respeitar historico e chaves estrangeiras.
 - Nao apague pedidos, pagamentos ou itens relacionados sem autorizacao explicita; quando autorizado, use transacao e documente a perda de historico.
 - Ao alterar uma View, preserve a acessibilidade basica, responsividade e as acoes existentes.
+- Antes de integrar outra branch, compare suas Views e estilos com a `CdmEdu` e preserve o padrao visual dela.
 - Depois de alterar C# ou Razor, execute `dotnet build InfiniteCoffee2.slnx --no-restore`.
 - Se o servidor local estiver em execucao e bloquear o build, reinicie o processo antes de validar.
 
