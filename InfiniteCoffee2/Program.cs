@@ -44,8 +44,9 @@ namespace InfiniteCoffee2
 
             var app = builder.Build();
 
-            // Garante colunas de auditoria e triggers usados pelo sync bidirecional.
-            Banco.GarantirEstruturaSync();
+            // A estrutura de sync e criada na primeira operacao de banco. Isso permite
+            // que o servidor suba em CI/desenvolvimento mesmo sem SQL Server disponivel;
+            // a inicializacao continua idempotente quando a API realmente e usada.
 
             if (!app.Environment.IsDevelopment())
             {
