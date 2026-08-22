@@ -41,8 +41,9 @@ Estas regras valem para todo trabalho neste repositorio.
 ## Git e publicacao
 
 - O remoto oficial e `https://github.com/pideias/pideias-infinittecoffee.git`.
-- Todo commit e push deste projeto deve ser feito na branch `kaio`.
-- Antes de qualquer commit ou push, confirme que a branch atual e `kaio`.
+- Todo commit e push de desenvolvimento deste projeto deve ser feito na branch `CdmEdu`.
+- A `master` recebe mudancas somente por merge aprovado da `CdmEdu`.
+- Antes de qualquer commit ou push de desenvolvimento, confirme que a branch atual e `CdmEdu`.
 - Antes de commit, confira `git status`, `git diff` e o resultado do build.
 - Nao use `git reset --hard`, `git checkout --` ou force push para apagar trabalho existente.
 - Use mensagens de commit curtas e descreva uma mudanca coesa.
