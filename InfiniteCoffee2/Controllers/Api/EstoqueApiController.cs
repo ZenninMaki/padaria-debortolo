@@ -26,6 +26,18 @@ public sealed class EstoqueApiController : ControllerBase
     [HttpGet("versao")]
     public IActionResult Versao() => Ok(new { versao = Banco.ObterVersaoEstoque() });
 
+    /// <summary>Retorna uma fotografia versionada do estoque para clientes de consulta.</summary>
+    [HttpGet("snapshot")]
+    public IActionResult Snapshot()
+    {
+        return Ok(new
+        {
+            versao = Banco.ObterVersaoEstoque(),
+            atualizadoEm = DateTime.UtcNow,
+            produtos = Banco.ListarEstoque()
+        });
+    }
+
     /// <summary>Registra uma saída e reduz o saldo de forma transacional.</summary>
     [HttpPost("saida")]
     public IActionResult Saida([FromBody] SaidaEstoqueRequest request)

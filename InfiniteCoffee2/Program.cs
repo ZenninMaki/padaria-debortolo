@@ -1,4 +1,5 @@
 using InfiniteCoffee2.Data;
+using InfiniteCoffee2.Services;
 
 namespace InfiniteCoffee2
 {
@@ -9,6 +10,7 @@ namespace InfiniteCoffee2
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddControllersWithViews();
+            builder.Services.AddHostedService<GoogleDriveSnapshotHostedService>();
             builder.Services.AddCors(options =>
             {
                 // Em desenvolvimento o app Flutter (Windows, mobile ou web) conversa com esta API.

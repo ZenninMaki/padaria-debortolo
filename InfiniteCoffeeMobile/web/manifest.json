@@ -1,11 +1,11 @@
 {
-    "name": "infinite_coffee_app",
-    "short_name": "infinite_coffee_app",
+    "name": "Padaria Debortolo",
+    "short_name": "Padaria Debortolo",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F5F0E8",
+    "theme_color": "#B5541A",
+    "description": "Sistema de gestão da Padaria Debortolo.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

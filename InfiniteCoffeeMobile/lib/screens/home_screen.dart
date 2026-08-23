@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/product.dart';
@@ -16,11 +18,22 @@ class _HomeScreenState extends State<HomeScreen> {
   String _search = '';
   final Map<int, CartLine> _cart = {};
   late Future<InventorySnapshot> _stock;
+  Timer? _refreshTimer;
 
   @override
   void initState() {
     super.initState();
     _stock = widget.repository.load();
+    _refreshTimer = Timer.periodic(
+      const Duration(hours: 1),
+      (_) => _reload(_search),
+    );
+  }
+
+  @override
+  void dispose() {
+    _refreshTimer?.cancel();
+    super.dispose();
   }
 
   void _reload([String search = '']) {
@@ -32,74 +45,121 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final desktop = MediaQuery.sizeOf(context).width >= 900;
+    final content = FutureBuilder<InventorySnapshot>(
+      future: _stock,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) return _ErrorView(onRetry: _reload);
+        final data =
+            snapshot.data ??
+            const InventorySnapshot(products: [], isOffline: true);
+        return _selectedIndex == 0
+            ? _Dashboard(
+                products: data.products,
+                offline: data.isOffline,
+                onOpenStock: () => setState(() => _selectedIndex = 2),
+              )
+            : _selectedIndex == 1
+            ? _ProductsView(products: data.products, onSearch: _reload)
+            : _selectedIndex == 2
+            ? _StockView(
+                products: data.products,
+                offline: data.isOffline,
+                search: _search,
+                onSearch: _reload,
+                onExit: _registerExit,
+                onEntry: _registerEntry,
+                onCreateProduct: _showProductDialog,
+              )
+            : _SaleView(
+                products: data.products,
+                search: _search,
+                onSearch: _reload,
+                cart: _cart.values.toList(),
+                onAdd: _addToCart,
+                onRemove: _removeFromCart,
+                onFinish: _finishSale,
+              );
+      },
+    );
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Infinite Coffee')),
-      body: FutureBuilder<InventorySnapshot>(
-        future: _stock,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) return _ErrorView(onRetry: _reload);
-          final data =
-              snapshot.data ??
-              const InventorySnapshot(products: [], isOffline: true);
-          return _selectedIndex == 0
-              ? _Dashboard(
-                  products: data.products,
-                  offline: data.isOffline,
-                  onOpenStock: () => setState(() => _selectedIndex = 2),
-                )
-              : _selectedIndex == 1
-              ? _ProductsView(products: data.products, onSearch: _reload)
-              : _selectedIndex == 2
-              ? _StockView(
-                  products: data.products,
-                  offline: data.isOffline,
-                  search: _search,
-                  onSearch: _reload,
-                  onExit: _registerExit,
-                  onEntry: _registerEntry,
-                  onCreateProduct: _showProductDialog,
-                )
-              : _SaleView(
-                  products: data.products,
-                  search: _search,
-                  onSearch: _reload,
-                  cart: _cart.values.toList(),
-                  onAdd: _addToCart,
-                  onRemove: _removeFromCart,
-                  onFinish: _finishSale,
-                );
-        },
+      appBar: AppBar(
+        title: const Text('Padaria Debortolo'),
+        toolbarHeight: desktop ? 76 : null,
+        actions: desktop
+            ? const [
+                Padding(
+                  padding: EdgeInsets.only(right: 24),
+                  child: Center(
+                    child: Text(
+                      'GESTÃO DA PADARIA',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 1.2,
+                      ),
+                    ),
+                  ),
+                ),
+              ]
+            : null,
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _selectedIndex,
-        onDestinationSelected: (index) =>
-            setState(() => _selectedIndex = index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Início',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.local_cafe_outlined),
-            selectedIcon: Icon(Icons.local_cafe),
-            label: 'Produtos',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            selectedIcon: Icon(Icons.inventory_2),
-            label: 'Estoque',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.point_of_sale_outlined),
-            selectedIcon: Icon(Icons.point_of_sale),
-            label: 'PDV',
-          ),
-        ],
-      ),
+      body: desktop
+          ? Row(
+              children: [
+                _DesktopNavigation(
+                  selectedIndex: _selectedIndex,
+                  onDestinationSelected: (index) =>
+                      setState(() => _selectedIndex = index),
+                ),
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1440),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: content,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : content,
+      bottomNavigationBar: desktop
+          ? null
+          : NavigationBar(
+              selectedIndex: _selectedIndex,
+              onDestinationSelected: (index) =>
+                  setState(() => _selectedIndex = index),
+              destinations: const [
+                NavigationDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home),
+                  label: 'Início',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.local_cafe_outlined),
+                  selectedIcon: Icon(Icons.local_cafe),
+                  label: 'Produtos',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.inventory_2_outlined),
+                  selectedIcon: Icon(Icons.inventory_2),
+                  label: 'Estoque',
+                ),
+                NavigationDestination(
+                  icon: Icon(Icons.point_of_sale_outlined),
+                  selectedIcon: Icon(Icons.point_of_sale),
+                  label: 'PDV',
+                ),
+              ],
+            ),
     );
   }
 
@@ -314,6 +374,108 @@ class _HomeScreenState extends State<HomeScreen> {
               }
             },
             child: const Text('Confirmar'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DesktopNavigation extends StatelessWidget {
+  const _DesktopNavigation({
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 236,
+      decoration: const BoxDecoration(
+        color: Color(0xFFFFFBF7),
+        border: Border(right: BorderSide(color: Color(0xFFE6DCD2))),
+      ),
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 16, 20),
+            child: Row(
+              children: [
+                Container(
+                  width: 42,
+                  height: 42,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5E5D7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.local_cafe, color: Color(0xFFB5541A)),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Padaria\nDebortolo',
+                    style: TextStyle(
+                      color: Color(0xFF2C1A0E),
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      height: 1.05,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, indent: 20, endIndent: 20),
+          const SizedBox(height: 16),
+          Expanded(
+            child: NavigationRail(
+              extended: true,
+              minExtendedWidth: 236,
+              backgroundColor: Colors.transparent,
+              selectedIndex: selectedIndex,
+              onDestinationSelected: onDestinationSelected,
+              labelType: NavigationRailLabelType.none,
+              destinations: const [
+                NavigationRailDestination(
+                  icon: Icon(Icons.home_outlined),
+                  selectedIcon: Icon(Icons.home),
+                  label: Text('Início'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.local_cafe_outlined),
+                  selectedIcon: Icon(Icons.local_cafe),
+                  label: Text('Produtos'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.inventory_2_outlined),
+                  selectedIcon: Icon(Icons.inventory_2),
+                  label: Text('Estoque'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.point_of_sale_outlined),
+                  selectedIcon: Icon(Icons.point_of_sale),
+                  label: Text('PDV'),
+                ),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.all(20),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'PAINEL ADMINISTRATIVO',
+                style: TextStyle(
+                  color: Color(0xFF8B7B70),
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
           ),
         ],
       ),

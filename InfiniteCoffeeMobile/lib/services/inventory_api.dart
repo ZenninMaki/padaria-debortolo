@@ -9,10 +9,14 @@ class InventoryApi {
   InventoryApi({http.Client? client}) : _client = client ?? http.Client();
 
   final http.Client _client;
+  static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
 
   // No emulador Android, localhost aponta para o proprio aparelho.
   // 10.0.2.2 redireciona para o computador que esta executando o backend.
   String get baseUrl {
+    if (_configuredBaseUrl.trim().isNotEmpty) {
+      return _configuredBaseUrl.replaceFirst(RegExp(r'/$'), '');
+    }
     if (kIsWeb) return 'http://localhost:5049';
     return defaultTargetPlatform == TargetPlatform.android
         ? 'http://10.0.2.2:5049'
