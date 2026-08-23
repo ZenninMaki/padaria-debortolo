@@ -6,8 +6,14 @@ namespace InfiniteCoffee2.Data
 {
     public class Banco
     {
-        private static string connectionString =
-            "Server=localhost\\KAIO;Database=infiniteCoffee;Trusted_Connection=True;TrustServerCertificate=True;";
+        private static string connectionString = string.Empty;
+
+        public static void Configurar(string? valor)
+        {
+            if (string.IsNullOrWhiteSpace(valor))
+                throw new InvalidOperationException("A connection string do banco não foi configurada.");
+            connectionString = valor;
+        }
 
         // =========================
         // CLIENTES

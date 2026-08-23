@@ -1,4 +1,5 @@
 using InfiniteCoffee2.Data;
+using InfiniteCoffee2.Middleware;
 using InfiniteCoffee2.Services;
 
 namespace InfiniteCoffee2
@@ -8,6 +9,10 @@ namespace InfiniteCoffee2
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
+            Banco.Configurar(
+                Environment.GetEnvironmentVariable("PADARIA_CONNECTION_STRING") ??
+                builder.Configuration.GetConnectionString("DefaultConnection"));
 
             builder.Services.AddControllersWithViews();
             builder.Services.AddHostedService<GoogleDriveSnapshotHostedService>();
@@ -59,6 +64,7 @@ namespace InfiniteCoffee2
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+            app.UseMiddleware<ApiKeyMiddleware>();
             app.UseCors("FlutterDevelopment");
 
             // Swagger fica disponível para o grupo testar as APIs durante o desenvolvimento.
