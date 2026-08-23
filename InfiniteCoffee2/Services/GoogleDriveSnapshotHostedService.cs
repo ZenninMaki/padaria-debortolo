@@ -30,6 +30,9 @@ public sealed class GoogleDriveSnapshotHostedService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (string.Equals(Environment.GetEnvironmentVariable("PADARIA_SNAPSHOT_ONLY"), "true", StringComparison.OrdinalIgnoreCase))
+            return;
+
         if (string.IsNullOrWhiteSpace(_clientSecretPath) || string.IsNullOrWhiteSpace(_folderId))
         {
             _logger.LogInformation("Upload Google Drive desativado: configure GOOGLE_DRIVE_OAUTH_CLIENT_PATH e GOOGLE_DRIVE_FOLDER_ID.");

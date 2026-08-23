@@ -10,12 +10,18 @@ namespace InfiniteCoffee2
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            Banco.Configurar(
-                Environment.GetEnvironmentVariable("PADARIA_CONNECTION_STRING") ??
-                builder.Configuration.GetConnectionString("DefaultConnection"));
+            var snapshotOnly = string.Equals(
+                Environment.GetEnvironmentVariable("PADARIA_SNAPSHOT_ONLY"), "true", StringComparison.OrdinalIgnoreCase);
+            if (!snapshotOnly)
+            {
+                Banco.Configurar(
+                    Environment.GetEnvironmentVariable("PADARIA_CONNECTION_STRING") ??
+                    builder.Configuration.GetConnectionString("DefaultConnection"));
+            }
 
             builder.Services.AddControllersWithViews();
             builder.Services.AddHostedService<GoogleDriveSnapshotHostedService>();
+            builder.Services.AddHttpClient<GoogleDriveSnapshotStore>();
             builder.Services.AddCors(options =>
             {
                 // Em desenvolvimento o app Flutter (Windows, mobile ou web) conversa com esta API.

@@ -1,4 +1,5 @@
 using InfiniteCoffee2.Data;
+using InfiniteCoffee2.Services;
 using Microsoft.AspNetCore.Mvc;
 
 namespace InfiniteCoffee2.Controllers.Api;
@@ -7,10 +8,19 @@ namespace InfiniteCoffee2.Controllers.Api;
 [Route("api/estoque")]
 public sealed class EstoqueApiController : ControllerBase
 {
+    private readonly GoogleDriveSnapshotStore _snapshotStore;
+
+    public EstoqueApiController(GoogleDriveSnapshotStore snapshotStore)
+    {
+        _snapshotStore = snapshotStore;
+    }
+
     /// <summary>Lista o estoque e permite pesquisar por nome ou código de barras.</summary>
     [HttpGet]
-    public IActionResult Listar([FromQuery] string? busca = null)
+    public async Task<IActionResult> Listar([FromQuery] string? busca = null)
     {
+        if (IsSnapshotOnly())
+            return Ok(await ProdutosDoSnapshotAsync(busca));
         return Ok(Banco.ListarEstoque(busca ?? string.Empty));
     }
 
@@ -28,14 +38,35 @@ public sealed class EstoqueApiController : ControllerBase
 
     /// <summary>Retorna uma fotografia versionada do estoque para clientes de consulta.</summary>
     [HttpGet("snapshot")]
-    public IActionResult Snapshot()
+    public async Task<IActionResult> Snapshot()
     {
+        if (IsSnapshotOnly())
+            return Ok(await _snapshotStore.GetAsync());
         return Ok(new
         {
             versao = Banco.ObterVersaoEstoque(),
             atualizadoEm = DateTime.UtcNow,
             produtos = Banco.ListarEstoque()
         });
+    }
+
+    private static bool IsSnapshotOnly() =>
+        string.Equals(Environment.GetEnvironmentVariable("PADARIA_SNAPSHOT_ONLY"), "true", StringComparison.OrdinalIgnoreCase);
+
+    private async Task<object> ProdutosDoSnapshotAsync(string? busca)
+    {
+        var snapshot = await _snapshotStore.GetAsync();
+        if (!snapshot.TryGetProperty("produtos", out var produtos))
+            return Array.Empty<object>();
+
+        var termo = (busca ?? string.Empty).Trim();
+        if (termo.Length == 0)
+            return produtos;
+
+        return produtos.EnumerateArray()
+            .Where(item => item.TryGetProperty("nome_produto", out var nome) &&
+                          nome.GetString()?.Contains(termo, StringComparison.OrdinalIgnoreCase) == true)
+            .ToArray();
     }
 
     /// <summary>Registra uma saída e reduz o saldo de forma transacional.</summary>

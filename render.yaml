@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: padaria-debortolo-api
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    envVars:
+      - key: PADARIA_SNAPSHOT_ONLY
+        value: "true"
+      - key: GOOGLE_DRIVE_SNAPSHOT_FILE_ID
+        sync: false
+      - key: PADARIA_API_TOKEN
+        sync: false
+      - key: PADARIA_READONLY_TOKEN
+        sync: false
