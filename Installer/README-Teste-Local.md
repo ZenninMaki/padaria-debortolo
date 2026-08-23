@@ -32,6 +32,18 @@ A API abrirá o navegador na primeira execução para autorizar sua conta Google
 Depois envia `estoque.json` ao iniciar e substitui o mesmo arquivo a cada hora.
 Não coloque o arquivo JSON de credenciais no repositório.
 
+Para acessar a API fora do PC, configure um token e use o mesmo token no app:
+
+```powershell
+$env:PADARIA_API_TOKEN = 'gere-um-token-longo-e-aleatorio'
+flutter build apk --release --dart-define=API_BASE_URL=https://sua-api.example `
+  --dart-define=API_ACCESS_TOKEN=gere-um-token-longo-e-aleatorio
+```
+
+Use o token de leitura (`ReadOnlyToken`) no mobile. Ele pode consultar o estoque,
+mas não pode executar entradas, saídas ou cadastros. Guarde o token administrativo
+(`ApiToken`) somente no PC.
+
 ## Testar pelo celular na mesma rede
 
 1. Descubra o IPv4 do computador com `ipconfig`.

@@ -10,6 +10,12 @@ class InventoryApi {
 
   final http.Client _client;
   static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
+  static const _apiToken = String.fromEnvironment('API_ACCESS_TOKEN');
+
+  Map<String, String> _headers([Map<String, String>? extra]) => {
+    if (_apiToken.trim().isNotEmpty) 'X-Api-Key': _apiToken,
+    ...?extra,
+  };
 
   // No emulador Android, localhost aponta para o proprio aparelho.
   // 10.0.2.2 redireciona para o computador que esta executando o backend.
@@ -27,7 +33,9 @@ class InventoryApi {
     final uri = Uri.parse('$baseUrl/api/estoque').replace(
       queryParameters: search.trim().isEmpty ? null : {'busca': search.trim()},
     );
-    final response = await _client.get(uri).timeout(const Duration(seconds: 8));
+    final response = await _client
+        .get(uri, headers: _headers())
+        .timeout(const Duration(seconds: 8));
     if (response.statusCode != 200) {
       throw const ApiException('Falha ao consultar estoque.');
     }
@@ -45,7 +53,7 @@ class InventoryApi {
     final response = await _client
         .post(
           Uri.parse('$baseUrl/api/estoque/saida'),
-          headers: {'Content-Type': 'application/json'},
+           headers: _headers({'Content-Type': 'application/json'}),
           body: jsonEncode({
             'produtoId': productId,
             'quantidade': quantity,
@@ -69,7 +77,7 @@ class InventoryApi {
     final response = await _client
         .post(
           Uri.parse('$baseUrl/api/estoque/entrada'),
-          headers: {'Content-Type': 'application/json'},
+           headers: _headers({'Content-Type': 'application/json'}),
           body: jsonEncode({
             'produtoId': productId,
             'quantidade': quantity,
@@ -93,7 +101,7 @@ class InventoryApi {
     final response = await _client
         .post(
           Uri.parse('$baseUrl/api/produtos'),
-          headers: {'Content-Type': 'application/json'},
+           headers: _headers({'Content-Type': 'application/json'}),
           body: jsonEncode({
             'nome': name,
             'descricao': description,
