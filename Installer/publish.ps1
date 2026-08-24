@@ -1,6 +1,7 @@
 [CmdletBinding()]
 param(
-    [switch]$SkipFlutter
+    [switch]$SkipFlutter,
+    [switch]$SkipInstaller
 )
 
 $ErrorActionPreference = 'Stop'
@@ -35,4 +36,24 @@ if (-not $SkipFlutter) {
 }
 
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Start-PadariaDebortolo.cmd') -Destination $serverOutput -Force
+
+if (-not $SkipInstaller) {
+    $isccCandidates = @(
+        (Get-Command ISCC.exe -ErrorAction SilentlyContinue).Source,
+        (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 7\ISCC.exe'),
+        (Join-Path $env:ProgramFiles 'Inno Setup 7\ISCC.exe'),
+        (Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'),
+        (Join-Path $env:ProgramFiles 'Inno Setup 6\ISCC.exe')
+    ) | Where-Object { $_ -and (Test-Path -LiteralPath $_) }
+
+    if ($isccCandidates.Count -eq 0) {
+        Write-Warning 'Inno Setup nao encontrado. Os artefatos foram gerados, mas o .exe instalador nao foi compilado.'
+        Write-Warning 'Instale o Inno Setup 7 ou 6 e execute este script novamente.'
+    }
+    else {
+        Write-Host 'Compilando instalador Windows...'
+        & $isccCandidates[0] (Join-Path $PSScriptRoot 'PadariaDebortolo.iss')
+    }
+}
+
 Write-Host "Artefatos gerados em $artifacts"

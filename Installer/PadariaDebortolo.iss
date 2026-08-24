@@ -22,10 +22,12 @@ UninstallDisplayIcon={app}\desktop\{#MyAppExeName}
 Source: "..\artifacts\server\*"; DestDir: "{app}\server"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\artifacts\desktop\*"; DestDir: "{app}\desktop"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "..\DatabaseScripts\*"; DestDir: "{app}\database"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "Setup-Database.ps1"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\server\Start-PadariaDebortolo.cmd"; WorkingDir: "{app}\server"
 Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\desktop\{#MyAppExeName}"; WorkingDir: "{app}\desktop"
 
 [Run]
+Filename: "powershell.exe"; Parameters: "-NoProfile -ExecutionPolicy Bypass -File ""{app}\Setup-Database.ps1"" -InstallDir ""{app}"""; Description: "Configurar banco de dados automaticamente"; Flags: waituntilterminated skipifsilent
 Filename: "{app}\server\Start-PadariaDebortolo.cmd"; Description: "Iniciar o sistema web agora"; Flags: postinstall nowait skipifsilent

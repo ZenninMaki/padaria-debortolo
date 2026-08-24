@@ -160,6 +160,26 @@ flutter run -d emulator-5554
 - Confirme que uma exclusao retira o produto das listas sem apagar historico de venda.
 - Nao coloque senha ou credencial em codigo, README, skill, log ou commit.
 
+## Publicacao e instalador Windows
+
+- O instalador completo e gerado por `Installer/publish.ps1`.
+- O pacote inclui o backend ASP.NET Core self-contained, o aplicativo Flutter Windows,
+  os scripts do banco e a rotina `Installer/Setup-Database.ps1`.
+- O banco e inicializado pelo script idempotente `DatabaseScripts/InstallDatabase.sql`.
+  Ele cria o banco `infiniteCoffee`, tabelas, procedures e dados iniciais sem apagar dados
+  existentes.
+- Durante a instalacao, o script procura SQL Server em `localhost\\KAIO`,
+  `localhost\\SQLEXPRESS`, `localhost` e `(localdb)\\MSSQLLocalDB`. Se encontrar uma
+  instancia, grava a conexao em `server/appsettings.Production.json`.
+- O SQL Server nao e distribuido no instalador. Em um PC virgem, ele deve ser instalado
+  previamente; se nao for encontrado, a instalacao informa o requisito com erro claro.
+- O Inno Setup 7 compila `artifacts/installer/PadariaDebortolo-Setup.exe`. O script de
+  publicacao detecta Inno Setup 7 ou 6 automaticamente.
+- Os icones do aplicativo sao gerados a partir de `InfiniteCoffeeMobile/assets/icon/app_icon.png`
+  para Android, Windows e Web usando `flutter_launcher_icons`.
+- O instalador nao contem tokens, senhas, credenciais OAuth ou strings de conexao com
+  credenciais.
+
 ## Limitacoes e proximos cuidados
 
 - O Hive e populado pelo primeiro sync; ainda nao existe um arquivo de banco prepopulado

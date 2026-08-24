@@ -53,7 +53,7 @@ class InventoryApi {
     final response = await _client
         .post(
           Uri.parse('$baseUrl/api/estoque/saida'),
-           headers: _headers({'Content-Type': 'application/json'}),
+          headers: _headers({'Content-Type': 'application/json'}),
           body: jsonEncode({
             'produtoId': productId,
             'quantidade': quantity,
@@ -77,7 +77,7 @@ class InventoryApi {
     final response = await _client
         .post(
           Uri.parse('$baseUrl/api/estoque/entrada'),
-           headers: _headers({'Content-Type': 'application/json'}),
+          headers: _headers({'Content-Type': 'application/json'}),
           body: jsonEncode({
             'produtoId': productId,
             'quantidade': quantity,
@@ -101,7 +101,7 @@ class InventoryApi {
     final response = await _client
         .post(
           Uri.parse('$baseUrl/api/produtos'),
-           headers: _headers({'Content-Type': 'application/json'}),
+          headers: _headers({'Content-Type': 'application/json'}),
           body: jsonEncode({
             'nome': name,
             'descricao': description,
