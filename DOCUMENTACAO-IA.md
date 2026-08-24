@@ -40,7 +40,8 @@ SQL Server infiniteCoffee (fonte da verdade)
 - O app nao conversa diretamente com outro dispositivo. Windows e celular conversam
   entre si por meio da API e do SQL Server.
 - Windows no mesmo computador usa `http://localhost:5049`.
-- Emulador Android usa `http://10.0.2.2:5049`.
+- Android usa a API publicada no Render por padrao; para desenvolvimento local,
+  compile informando `API_BASE_URL=http://10.0.2.2:5049` no emulador.
 - Celular fisico deve usar o IP LAN do computador, por exemplo `http://192.168.1.10:5049`.
 
 ## Fluxo de inicializacao do Flutter
@@ -179,6 +180,8 @@ flutter run -d emulator-5554
   para Android, Windows e Web usando `flutter_launcher_icons`.
 - O instalador nao contem tokens, senhas, credenciais OAuth ou strings de conexao com
   credenciais.
+- O APK de producao deve ser compilado com `--dart-define=API_ACCESS_TOKEN=...`, usando o
+  valor de `PADARIA_READONLY_TOKEN` do Render. O token nao deve ser commitado.
 
 ## Limitacoes e proximos cuidados
 

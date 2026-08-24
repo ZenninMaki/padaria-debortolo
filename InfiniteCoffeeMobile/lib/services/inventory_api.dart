@@ -11,21 +11,22 @@ class InventoryApi {
   final http.Client _client;
   static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
   static const _apiToken = String.fromEnvironment('API_ACCESS_TOKEN');
+  static const _productionBaseUrl =
+      'https://padaria-debortolo-api-8w5w.onrender.com';
 
   Map<String, String> _headers([Map<String, String>? extra]) => {
     if (_apiToken.trim().isNotEmpty) 'X-Api-Key': _apiToken,
     ...?extra,
   };
 
-  // No emulador Android, localhost aponta para o proprio aparelho.
-  // 10.0.2.2 redireciona para o computador que esta executando o backend.
+  // API_BASE_URL permite apontar para o backend local durante o desenvolvimento.
   String get baseUrl {
     if (_configuredBaseUrl.trim().isNotEmpty) {
       return _configuredBaseUrl.replaceFirst(RegExp(r'/$'), '');
     }
     if (kIsWeb) return 'http://localhost:5049';
     return defaultTargetPlatform == TargetPlatform.android
-        ? 'http://10.0.2.2:5049'
+        ? _productionBaseUrl
         : 'http://localhost:5049';
   }
 
