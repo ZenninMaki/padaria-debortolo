@@ -76,6 +76,7 @@ class InventoryApi {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       throw ApiException(
         '${body['mensagem'] ?? 'Nao foi possivel registrar a saida.'}',
+        response.statusCode,
       );
     }
   }
@@ -97,7 +98,10 @@ class InventoryApi {
         )
         .timeout(const Duration(seconds: 8));
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw const ApiException('Nao foi possivel registrar a entrada.');
+      throw ApiException(
+        'Nao foi possivel registrar a entrada.',
+        response.statusCode,
+      );
     }
   }
 

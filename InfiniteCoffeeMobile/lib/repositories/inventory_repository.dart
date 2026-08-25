@@ -59,7 +59,11 @@ class InventoryRepository {
         reason: reason,
       );
       return const ExitResult(true, 'Saida registrada com sucesso.');
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException &&
+          (error.statusCode == 401 || error.statusCode == 403)) {
+        return ExitResult(false, error.message);
+      }
       // Sem internet, a operacao fica guardada para envio posterior.
       final preferences = await SharedPreferences.getInstance();
       final pending = preferences.getStringList(_pendingKey) ?? [];
@@ -93,7 +97,11 @@ class InventoryRepository {
         reason: reason,
       );
       return const ExitResult(true, 'Entrada registrada com sucesso.');
-    } catch (_) {
+    } catch (error) {
+      if (error is ApiException &&
+          (error.statusCode == 401 || error.statusCode == 403)) {
+        return ExitResult(false, error.message);
+      }
       final preferences = await SharedPreferences.getInstance();
       final pending = preferences.getStringList(_pendingKey) ?? [];
       pending.add(
