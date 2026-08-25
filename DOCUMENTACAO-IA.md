@@ -182,6 +182,9 @@ flutter run -d emulator-5554
   credenciais.
 - O APK de producao deve ser compilado com `--dart-define=API_ACCESS_TOKEN=...`, usando o
   valor de `PADARIA_READONLY_TOKEN` do Render. O token nao deve ser commitado.
+- Para permitir entradas e saidas no mobile, configure tambem `PADARIA_MOBILE_WRITE_TOKEN`
+  no Render e compile o APK com `--dart-define=API_WRITE_TOKEN=...`. Esse token e separado
+  do token somente leitura e do token administrativo.
 - O cliente mobile usa a URL do Render por padrao no Android, aguarda ate 60 segundos para
   permitir o despertar da instancia gratuita e exibe erro de autenticacao separado de erro
   real de conexao.

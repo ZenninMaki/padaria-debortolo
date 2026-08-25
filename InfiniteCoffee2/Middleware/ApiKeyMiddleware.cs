@@ -25,6 +25,7 @@ public sealed class ApiKeyMiddleware
 
         var configuredToken = Environment.GetEnvironmentVariable("PADARIA_API_TOKEN");
         var readOnlyToken = Environment.GetEnvironmentVariable("PADARIA_READONLY_TOKEN");
+        var mobileWriteToken = Environment.GetEnvironmentVariable("PADARIA_MOBILE_WRITE_TOKEN");
         var suppliedToken = context.Request.Headers["X-Api-Key"].FirstOrDefault();
         if (string.IsNullOrWhiteSpace(suppliedToken))
             suppliedToken = context.Request.Headers.Authorization.FirstOrDefault()?.Replace("Bearer ", "", StringComparison.OrdinalIgnoreCase);
@@ -39,7 +40,8 @@ public sealed class ApiKeyMiddleware
         var authorized = string.IsNullOrWhiteSpace(configuredToken)
             ? string.IsNullOrWhiteSpace(readOnlyToken) && loopback
             : Matches(suppliedToken, configuredToken) ||
-              (!writeRequest && Matches(suppliedToken, readOnlyToken));
+              (!writeRequest && Matches(suppliedToken, readOnlyToken)) ||
+              Matches(suppliedToken, mobileWriteToken);
 
         if (!authorized)
         {

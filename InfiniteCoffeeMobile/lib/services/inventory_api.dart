@@ -12,13 +12,19 @@ class InventoryApi {
   final http.Client _client;
   static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
   static const _apiToken = String.fromEnvironment('API_ACCESS_TOKEN');
+  static const _writeToken = String.fromEnvironment('API_WRITE_TOKEN');
   static const _productionBaseUrl =
       'https://padaria-debortolo-api-8w5w.onrender.com';
 
-  Map<String, String> _headers([Map<String, String>? extra]) => {
-    if (_apiToken.trim().isNotEmpty) 'X-Api-Key': _apiToken,
-    ...?extra,
-  };
+  Map<String, String> _headers([
+    Map<String, String>? extra,
+    bool write = false,
+  ]) {
+    final token = write && _writeToken.trim().isNotEmpty
+        ? _writeToken
+        : _apiToken;
+    return {if (token.trim().isNotEmpty) 'X-Api-Key': token, ...?extra};
+  }
 
   // API_BASE_URL permite apontar para o backend local durante o desenvolvimento.
   String get baseUrl {
@@ -64,7 +70,7 @@ class InventoryApi {
     final response = await _client
         .post(
           Uri.parse('$baseUrl/api/estoque/saida'),
-          headers: _headers({'Content-Type': 'application/json'}),
+          headers: _headers({'Content-Type': 'application/json'}, true),
           body: jsonEncode({
             'produtoId': productId,
             'quantidade': quantity,
@@ -89,7 +95,7 @@ class InventoryApi {
     final response = await _client
         .post(
           Uri.parse('$baseUrl/api/estoque/entrada'),
-          headers: _headers({'Content-Type': 'application/json'}),
+          headers: _headers({'Content-Type': 'application/json'}, true),
           body: jsonEncode({
             'produtoId': productId,
             'quantidade': quantity,
@@ -116,7 +122,7 @@ class InventoryApi {
     final response = await _client
         .post(
           Uri.parse('$baseUrl/api/produtos'),
-          headers: _headers({'Content-Type': 'application/json'}),
+          headers: _headers({'Content-Type': 'application/json'}, true),
           body: jsonEncode({
             'nome': name,
             'descricao': description,

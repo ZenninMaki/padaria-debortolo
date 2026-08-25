@@ -14,3 +14,5 @@ services:
         sync: false
       - key: PADARIA_READONLY_TOKEN
         sync: false
+      - key: PADARIA_MOBILE_WRITE_TOKEN
+        sync: false
