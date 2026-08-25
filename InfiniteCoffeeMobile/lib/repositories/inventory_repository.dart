@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -18,7 +19,7 @@ class InventoryRepository {
       final products = await _api.getStock(search: search);
       await _saveProducts(products);
       return InventorySnapshot(products: products, isOffline: false);
-    } catch (_) {
+    } catch (error) {
       final products = await _readProducts();
       final term = search.trim().toLowerCase();
       final filtered = term.isEmpty
@@ -30,7 +31,16 @@ class InventoryRepository {
                       (product.barcode ?? '').contains(term),
                 )
                 .toList();
-      return InventorySnapshot(products: filtered, isOffline: true);
+      final message = switch (error) {
+        ApiException(:final message) => message,
+        TimeoutException() => 'O servidor demorou para responder. Tente novamente em alguns segundos.',
+        _ => 'Nao foi possivel conectar ao servidor. Verifique a internet do celular.',
+      };
+      return InventorySnapshot(
+        products: filtered,
+        isOffline: true,
+        errorMessage: message,
+      );
     }
   }
 
@@ -186,9 +196,14 @@ class InventoryRepository {
 }
 
 class InventorySnapshot {
-  const InventorySnapshot({required this.products, required this.isOffline});
+  const InventorySnapshot({
+    required this.products,
+    required this.isOffline,
+    this.errorMessage,
+  });
   final List<Product> products;
   final bool isOffline;
+  final String? errorMessage;
 }
 
 class ExitResult {

@@ -68,6 +68,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ? _StockView(
                 products: data.products,
                 offline: data.isOffline,
+                errorMessage: data.errorMessage,
                 search: _search,
                 onSearch: _reload,
                 onExit: _registerExit,
@@ -561,6 +562,7 @@ class _StockView extends StatelessWidget {
   const _StockView({
     required this.products,
     required this.offline,
+    this.errorMessage,
     required this.search,
     required this.onSearch,
     required this.onExit,
@@ -569,6 +571,7 @@ class _StockView extends StatelessWidget {
   });
   final List<Product> products;
   final bool offline;
+  final String? errorMessage;
   final String search;
   final ValueChanged<String> onSearch;
   final ValueChanged<Product> onExit;
@@ -592,8 +595,10 @@ class _StockView extends StatelessWidget {
           ),
         ),
         if (offline)
-          const MaterialBanner(
-            content: Text('Sem internet: consultas usam o cache local.'),
+          MaterialBanner(
+            content: Text(
+              errorMessage ?? 'Consulta offline: mostrando o cache local.',
+            ),
             actions: [SizedBox.shrink()],
           ),
         if (low > 0)

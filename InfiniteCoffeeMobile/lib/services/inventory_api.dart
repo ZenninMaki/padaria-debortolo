@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
@@ -36,9 +37,18 @@ class InventoryApi {
     );
     final response = await _client
         .get(uri, headers: _headers())
-        .timeout(const Duration(seconds: 8));
+        .timeout(const Duration(seconds: 60));
     if (response.statusCode != 200) {
-      throw const ApiException('Falha ao consultar estoque.');
+      if (response.statusCode == 401 || response.statusCode == 403) {
+        throw ApiException(
+          'A API recusou o acesso. Gere o APK com o token de leitura correto.',
+          response.statusCode,
+        );
+      }
+      throw ApiException(
+        'A API retornou o erro ${response.statusCode}.',
+        response.statusCode,
+      );
     }
     final data = jsonDecode(response.body) as List<dynamic>;
     return data
@@ -120,6 +130,7 @@ class InventoryApi {
 }
 
 class ApiException implements Exception {
-  const ApiException(this.message);
+  const ApiException(this.message, [this.statusCode]);
   final String message;
+  final int? statusCode;
 }
