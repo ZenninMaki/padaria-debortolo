@@ -58,6 +58,7 @@ class InventoryRepository {
         quantity: quantity,
         reason: reason,
       );
+      await _changeCachedQuantity(product.id, -quantity);
       return const ExitResult(true, 'Saida registrada com sucesso.');
     } catch (error) {
       if (error is ApiException &&
@@ -75,6 +76,7 @@ class InventoryRepository {
         }),
       );
       await preferences.setStringList(_pendingKey, pending);
+      await _changeCachedQuantity(product.id, -quantity);
       return const ExitResult(
         true,
         'Saida salva offline e sera sincronizada quando houver internet.',
@@ -96,6 +98,7 @@ class InventoryRepository {
         quantity: quantity,
         reason: reason,
       );
+      await _changeCachedQuantity(product.id, quantity);
       return const ExitResult(true, 'Entrada registrada com sucesso.');
     } catch (error) {
       if (error is ApiException &&
@@ -113,6 +116,7 @@ class InventoryRepository {
         }),
       );
       await preferences.setStringList(_pendingKey, pending);
+      await _changeCachedQuantity(product.id, quantity);
       return const ExitResult(
         true,
         'Entrada salva offline e sera sincronizada depois.',
@@ -190,6 +194,17 @@ class InventoryRepository {
     return (jsonDecode(raw) as List<dynamic>)
         .map((item) => Product.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  Future<void> _changeCachedQuantity(int productId, int change) async {
+    final products = await _readProducts();
+    final index = products.indexWhere((item) => item.id == productId);
+    if (index < 0) return;
+    final product = products[index];
+    products[index] = product.withQuantity(
+      (product.quantity + change).clamp(0, 2147483647).toInt(),
+    );
+    await _saveProducts(products);
   }
 
   Map<String, dynamic> _toJson(Product product) => {

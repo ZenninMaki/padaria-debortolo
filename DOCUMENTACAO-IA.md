@@ -188,6 +188,10 @@ flutter run -d emulator-5554
 - O cliente mobile usa a URL do Render por padrao no Android, aguarda ate 60 segundos para
   permitir o despertar da instancia gratuita e exibe erro de autenticacao separado de erro
   real de conexao.
+- No modo demonstrativo, o mobile mantém uma cópia local persistente dos produtos, atualiza
+  o saldo imediatamente após entrada/saída e mantém operações pendentes para sincronização
+  posterior pela API. O Google Drive continua sendo alimentado pelo serviço do backend, não
+  diretamente por credenciais dentro do APK.
 
 ## Limitacoes e proximos cuidados
 
