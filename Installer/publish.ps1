@@ -36,6 +36,7 @@ if (-not $SkipFlutter) {
 }
 
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Start-PadariaDebortolo.cmd') -Destination $serverOutput -Force
+Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Start-PadariaDesktop.cmd') -Destination $artifacts -Force
 
 if (-not $SkipInstaller) {
     $isccCandidates = @(
@@ -52,7 +53,7 @@ if (-not $SkipInstaller) {
     }
     else {
         Write-Host 'Compilando instalador Windows...'
-        & $isccCandidates[0] (Join-Path $PSScriptRoot 'PadariaDebortolo.iss')
+        & ($isccCandidates[0]) (Join-Path $PSScriptRoot 'PadariaDebortolo.iss')
     }
 }
 

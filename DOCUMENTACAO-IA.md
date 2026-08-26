@@ -199,6 +199,11 @@ flutter run -d emulator-5554
   `estoque.json`; a chave nunca deve ser commitada.
 - O desktop importa o snapshot do Drive para o SQL Server e publica o snapshot novamente a
   cada 30 minutos. O mobile recarrega o estoque e tenta enviar a fila local no mesmo intervalo.
+- O atalho instalado usa `Installer/Start-PadariaDesktop.cmd`, que inicia o backend local em
+  `http://0.0.0.0:5049` e abre o aplicativo desktop juntos. Assim o funcionamento normal
+  do desktop nao depende do Render nem de internet. A instalacao libera a porta 5049 somente
+  no perfil de rede privada. Para o APK acessar o PC pela LAN, compile-o com
+  `API_BASE_URL=http://IP_DO_PC:5049`.
 
 ## Limitacoes e proximos cuidados
 
