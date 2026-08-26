@@ -77,7 +77,7 @@ class InventoryApi {
             'motivo': reason,
           }),
         )
-        .timeout(const Duration(seconds: 8));
+        .timeout(const Duration(seconds: 60));
     if (response.statusCode < 200 || response.statusCode >= 300) {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       throw ApiException(
@@ -102,7 +102,7 @@ class InventoryApi {
             'motivo': reason,
           }),
         )
-        .timeout(const Duration(seconds: 8));
+        .timeout(const Duration(seconds: 60));
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw ApiException(
         'Nao foi possivel registrar a entrada.',
@@ -132,7 +132,7 @@ class InventoryApi {
             'quantidade': quantity,
           }),
         )
-        .timeout(const Duration(seconds: 8));
+        .timeout(const Duration(seconds: 60));
     if (response.statusCode < 200 || response.statusCode >= 300) {
       throw const ApiException('Nao foi possivel cadastrar o produto.');
     }

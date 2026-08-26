@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 
 import '../models/product.dart';
@@ -19,6 +20,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final Map<int, CartLine> _cart = {};
   late Future<InventorySnapshot> _stock;
   Timer? _refreshTimer;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   @override
   void initState() {
@@ -28,11 +30,20 @@ class _HomeScreenState extends State<HomeScreen> {
       const Duration(minutes: 30),
       (_) => _reload(_search),
     );
+    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((
+      results,
+    ) {
+      if (results.any((result) => result != ConnectivityResult.none) &&
+          mounted) {
+        _reload(_search);
+      }
+    });
   }
 
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _connectivitySubscription?.cancel();
     super.dispose();
   }
 
