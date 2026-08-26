@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _stock = widget.repository.load();
     _refreshTimer = Timer.periodic(
-      const Duration(hours: 1),
+      const Duration(minutes: 30),
       (_) => _reload(_search),
     );
   }

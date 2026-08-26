@@ -14,15 +14,19 @@ namespace InfiniteCoffee2.Services;
 /// </summary>
 public sealed class GoogleDriveSnapshotHostedService : BackgroundService
 {
-    private static readonly TimeSpan Interval = TimeSpan.FromHours(1);
+    private static readonly TimeSpan Interval = TimeSpan.FromMinutes(30);
     private readonly ILogger<GoogleDriveSnapshotHostedService> _logger;
     private readonly string? _clientSecretPath;
     private readonly string? _folderId;
     private readonly string _fileName;
+    private readonly IHttpClientFactory _httpClientFactory;
 
-    public GoogleDriveSnapshotHostedService(ILogger<GoogleDriveSnapshotHostedService> logger)
+    public GoogleDriveSnapshotHostedService(
+        ILogger<GoogleDriveSnapshotHostedService> logger,
+        IHttpClientFactory httpClientFactory)
     {
         _logger = logger;
+        _httpClientFactory = httpClientFactory;
         _clientSecretPath = Environment.GetEnvironmentVariable("GOOGLE_DRIVE_OAUTH_CLIENT_PATH");
         _folderId = Environment.GetEnvironmentVariable("GOOGLE_DRIVE_FOLDER_ID");
         _fileName = Environment.GetEnvironmentVariable("GOOGLE_DRIVE_SNAPSHOT_NAME") ?? "estoque.json";
@@ -45,10 +49,38 @@ public sealed class GoogleDriveSnapshotHostedService : BackgroundService
             return;
         }
 
+        await ImportSnapshotAsync(stoppingToken);
         await UploadSnapshotAsync(stoppingToken);
         using var timer = new PeriodicTimer(Interval);
         while (await timer.WaitForNextTickAsync(stoppingToken))
+        {
+            await ImportSnapshotAsync(stoppingToken);
             await UploadSnapshotAsync(stoppingToken);
+        }
+    }
+
+    private async Task ImportSnapshotAsync(CancellationToken cancellationToken)
+    {
+        var fileId = Environment.GetEnvironmentVariable("GOOGLE_DRIVE_SNAPSHOT_FILE_ID");
+        if (string.IsNullOrWhiteSpace(fileId)) return;
+
+        try
+        {
+            var url = $"https://drive.google.com/uc?export=download&id={Uri.EscapeDataString(fileId)}";
+            using var response = await _httpClientFactory.CreateClient().GetAsync(url, cancellationToken);
+            response.EnsureSuccessStatusCode();
+            await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using var document = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+            Banco.ImportarEstoqueDoSnapshot(document.RootElement);
+            _logger.LogInformation("Snapshot do Google Drive importado para o banco local.");
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(exception, "Nao foi possivel importar o snapshot do Google Drive.");
+        }
     }
 
     private async Task UploadSnapshotAsync(CancellationToken cancellationToken)

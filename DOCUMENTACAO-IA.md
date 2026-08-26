@@ -196,6 +196,8 @@ flutter run -d emulator-5554
   `/api/estoque/saida` quando `PADARIA_SNAPSHOT_ONLY=true`, usando a conta de serviço definida
   em `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`. Essa conta precisa ter permissão de Editor no
   `estoque.json`; a chave nunca deve ser commitada.
+- O desktop importa o snapshot do Drive para o SQL Server e publica o snapshot novamente a
+  cada 30 minutos. O mobile recarrega o estoque e tenta enviar a fila local no mesmo intervalo.
 
 ## Limitacoes e proximos cuidados
 

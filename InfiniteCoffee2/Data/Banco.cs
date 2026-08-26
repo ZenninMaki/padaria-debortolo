@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Text.Json;
 using Microsoft.Data.SqlClient;
 using InfiniteCoffee2.Models;
 
@@ -446,6 +447,53 @@ namespace InfiniteCoffee2.Data
             conn.Open();
             using var cmd = new SqlCommand("IF OBJECT_ID(N'dbo.MovimentacoesEstoque', N'U') IS NULL CREATE TABLE MovimentacoesEstoque (id_movimentacao INT IDENTITY(1,1) PRIMARY KEY, produtoid INT NOT NULL, tipo_movimentacao VARCHAR(20) NOT NULL, quantidade INT NOT NULL, motivo VARCHAR(200) NOT NULL, data_movimentacao DATETIME NOT NULL, CONSTRAINT FK_Movimentacoes_Produtos FOREIGN KEY (produtoid) REFERENCES Produtos(id_produto));", conn);
             cmd.ExecuteNonQuery();
+        }
+
+        public static void ImportarEstoqueDoSnapshot(JsonElement snapshot)
+        {
+            if (!snapshot.TryGetProperty("produtos", out var produtos) || produtos.ValueKind != JsonValueKind.Array)
+                return;
+
+            GarantirTabelaMovimentacoes();
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var transaction = conn.BeginTransaction();
+            try
+            {
+                foreach (var item in produtos.EnumerateArray())
+                {
+                    if (!item.TryGetProperty("id_produto", out var idValue) ||
+                        !item.TryGetProperty("quantidade_estoque", out var quantityValue))
+                        continue;
+
+                    var id = idValue.GetInt32();
+                    var remoteQuantity = quantityValue.GetInt32();
+                    using var current = new SqlCommand("SELECT quantidade_estoque FROM Produtos WHERE id_produto = @id", conn, transaction);
+                    current.Parameters.AddWithValue("@id", id);
+                    var value = current.ExecuteScalar();
+                    if (value is null || value == DBNull.Value) continue;
+                    var delta = remoteQuantity - Convert.ToInt32(value);
+                    if (delta == 0) continue;
+
+                    using var update = new SqlCommand("UPDATE Produtos SET quantidade_estoque = @quantidade, modified_at = SYSUTCDATETIME() WHERE id_produto = @id", conn, transaction);
+                    update.Parameters.AddWithValue("@id", id);
+                    update.Parameters.AddWithValue("@quantidade", remoteQuantity);
+                    update.ExecuteNonQuery();
+
+                    using var movement = new SqlCommand("INSERT INTO MovimentacoesEstoque (produtoid, tipo_movimentacao, quantidade, motivo, data_movimentacao) VALUES (@id, @tipo, @quantidade, @motivo, GETDATE())", conn, transaction);
+                    movement.Parameters.AddWithValue("@id", id);
+                    movement.Parameters.AddWithValue("@tipo", delta > 0 ? "Entrada" : "Saida");
+                    movement.Parameters.AddWithValue("@quantidade", Math.Abs(delta));
+                    movement.Parameters.AddWithValue("@motivo", "Sincronizacao Google Drive");
+                    movement.ExecuteNonQuery();
+                }
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
         }
 
         // =========================
