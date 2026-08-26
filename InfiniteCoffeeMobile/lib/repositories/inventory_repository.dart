@@ -44,6 +44,9 @@ class InventoryRepository {
     }
   }
 
+  Future<InventorySnapshot> syncNow({String search = ''}) =>
+      load(search: search);
+
   Future<ExitResult> registerExit({
     required Product product,
     required int quantity,

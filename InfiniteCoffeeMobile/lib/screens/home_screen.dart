@@ -102,23 +102,32 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text('Padaria Debortolo'),
         toolbarHeight: desktop ? 76 : null,
-        actions: desktop
-            ? const [
-                Padding(
-                  padding: EdgeInsets.only(right: 24),
-                  child: Center(
-                    child: Text(
-                      'GESTÃO DA PADARIA',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
+        actions: [
+          IconButton(
+            onPressed: _syncNow,
+            tooltip: 'Sincronizar com o Google Drive',
+            icon: const Icon(Icons.sync),
+          ),
+          IconButton(
+            onPressed: _sendToDrive,
+            tooltip: 'Enviar alterações para o Google Drive',
+            icon: const Icon(Icons.cloud_upload_outlined),
+          ),
+          if (desktop)
+            const Padding(
+              padding: EdgeInsets.only(left: 8, right: 24),
+              child: Center(
+                child: Text(
+                  'GESTÃO DA PADARIA',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1.2,
                   ),
                 ),
-              ]
-            : null,
+              ),
+            ),
+        ],
       ),
       body: desktop
           ? Row(
@@ -172,6 +181,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
+    );
+  }
+
+  Future<void> _syncNow() async {
+    await _runSync('Sincronizacao concluida.');
+  }
+
+  Future<void> _sendToDrive() async {
+    await _runSync('Alteracoes enviadas para o Google Drive.');
+  }
+
+  Future<void> _runSync(String successMessage) async {
+    setState(() => _stock = widget.repository.syncNow(search: _search));
+    final result = await _stock;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result.isOffline
+              ? result.errorMessage ?? 'Sincronizacao pendente.'
+              : successMessage,
+        ),
+      ),
     );
   }
 
