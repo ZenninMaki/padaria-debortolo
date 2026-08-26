@@ -71,12 +71,15 @@ public sealed class EstoqueApiController : ControllerBase
 
     /// <summary>Registra uma saída e reduz o saldo de forma transacional.</summary>
     [HttpPost("saida")]
-    public IActionResult Saida([FromBody] SaidaEstoqueRequest request)
+    public async Task<IActionResult> Saida([FromBody] SaidaEstoqueRequest request)
     {
         if (request.Quantidade < 1 || string.IsNullOrWhiteSpace(request.Motivo) || request.Motivo.Length > 200)
             return BadRequest(new { mensagem = "Informe uma quantidade válida e um motivo de até 200 caracteres." });
 
-        if (!Banco.RegistrarSaidaEstoque(request.ProdutoId, request.Quantidade, request.Motivo))
+        var ok = IsSnapshotOnly()
+            ? await _snapshotStore.ApplyMovementAsync(request.ProdutoId, request.Quantidade, false)
+            : Banco.RegistrarSaidaEstoque(request.ProdutoId, request.Quantidade, request.Motivo);
+        if (!ok)
             return BadRequest(new { mensagem = "Produto inexistente ou estoque insuficiente." });
 
         return Ok(new { mensagem = "Saída registrada com sucesso." });
@@ -84,11 +87,14 @@ public sealed class EstoqueApiController : ControllerBase
 
     /// <summary>Registra uma entrada e aumenta o saldo de forma transacional.</summary>
     [HttpPost("entrada")]
-    public IActionResult Entrada([FromBody] EntradaEstoqueRequest request)
+    public async Task<IActionResult> Entrada([FromBody] EntradaEstoqueRequest request)
     {
         if (request.Quantidade < 1 || string.IsNullOrWhiteSpace(request.Motivo) || request.Motivo.Length > 200)
             return BadRequest(new { mensagem = "Informe uma quantidade válida e um motivo de até 200 caracteres." });
-        if (!Banco.RegistrarEntradaEstoque(request.ProdutoId, request.Quantidade, request.Motivo))
+        var ok = IsSnapshotOnly()
+            ? await _snapshotStore.ApplyMovementAsync(request.ProdutoId, request.Quantidade, true)
+            : Banco.RegistrarEntradaEstoque(request.ProdutoId, request.Quantidade, request.Motivo);
+        if (!ok)
             return BadRequest(new { mensagem = "Produto inexistente." });
         return Ok(new { mensagem = "Entrada registrada com sucesso." });
     }

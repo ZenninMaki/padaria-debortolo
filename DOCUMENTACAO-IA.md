@@ -192,6 +192,10 @@ flutter run -d emulator-5554
   o saldo imediatamente após entrada/saída e mantém operações pendentes para sincronização
   posterior pela API. O Google Drive continua sendo alimentado pelo serviço do backend, não
   diretamente por credenciais dentro do APK.
+- O modo demonstrativo cloud aceita entradas e saídas em `/api/estoque/entrada` e
+  `/api/estoque/saida` quando `PADARIA_SNAPSHOT_ONLY=true`, usando a conta de serviço definida
+  em `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`. Essa conta precisa ter permissão de Editor no
+  `estoque.json`; a chave nunca deve ser commitada.
 
 ## Limitacoes e proximos cuidados
 
