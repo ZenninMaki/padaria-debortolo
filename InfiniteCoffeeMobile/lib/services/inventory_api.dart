@@ -32,7 +32,9 @@ class InventoryApi {
       return _configuredBaseUrl.replaceFirst(RegExp(r'/$'), '');
     }
     if (kIsWeb) return 'http://localhost:5049';
-    return _productionBaseUrl;
+    return defaultTargetPlatform == TargetPlatform.android
+        ? _productionBaseUrl
+        : 'http://localhost:5049';
   }
 
   Future<List<Product>> getStock({String search = ''}) async {

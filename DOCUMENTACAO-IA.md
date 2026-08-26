@@ -185,7 +185,8 @@ flutter run -d emulator-5554
 - Para permitir entradas e saidas no mobile, configure tambem `PADARIA_MOBILE_WRITE_TOKEN`
   no Render e compile o APK com `--dart-define=API_WRITE_TOKEN=...`. Esse token e separado
   do token somente leitura e do token administrativo.
-- O cliente mobile usa a URL do Render por padrao no Android, aguarda ate 60 segundos para
+- O cliente mobile usa a URL do Render por padrao no Android, enquanto o desktop usa a API
+  local em `http://localhost:5049`. O cliente aguarda ate 60 segundos para
   permitir o despertar da instancia gratuita e exibe erro de autenticacao separado de erro
   real de conexao.
 - No modo demonstrativo, o mobile mantém uma cópia local persistente dos produtos, atualiza
