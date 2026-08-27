@@ -180,11 +180,12 @@ flutter run -d emulator-5554
   para Android, Windows e Web usando `flutter_launcher_icons`.
 - O instalador nao contem tokens, senhas, credenciais OAuth ou strings de conexao com
   credenciais.
-- O APK de producao deve ser compilado com `--dart-define=API_ACCESS_TOKEN=...`, usando o
-  valor de `PADARIA_READONLY_TOKEN` do Render. O token nao deve ser commitado.
-- Para permitir entradas e saidas no mobile, configure tambem `PADARIA_MOBILE_WRITE_TOKEN`
-  no Render e compile o APK com `--dart-define=API_WRITE_TOKEN=...`. Esse token e separado
-  do token somente leitura e do token administrativo.
+- As APIs estao publicas para o trabalho demonstrativo: nao exigem mais `X-Api-Key` no
+  mobile, desktop ou web. A credencial do Google Drive continua somente no servidor e nao
+  deve ser distribuida nos aplicativos.
+- Os tokens continuam aceitos por compatibilidade, mas nao sao obrigatorios enquanto a API
+  demonstrativa estiver publica. APKs novos podem ser compilados sem `API_ACCESS_TOKEN` e
+  `API_WRITE_TOKEN`.
 - O cliente mobile usa a URL do Render por padrao no Android, enquanto o desktop usa a API
   local em `http://localhost:5049`. O cliente aguarda ate 60 segundos para
   permitir o despertar da instancia gratuita e exibe erro de autenticacao separado de erro

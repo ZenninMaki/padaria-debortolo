@@ -42,10 +42,11 @@ https://SEU-SERVICO.onrender.com/api/health
 https://SEU-SERVICO.onrender.com/api/estoque/snapshot
 ```
 
-O endpoint de estoque deve receber o header:
+Os tokens continuam disponiveis para uso futuro, mas a API demonstrativa atualmente aceita
+as chamadas sem header `X-Api-Key`.
 
 ```text
-X-Api-Key: token-somente-leitura-do-mobile
+X-Api-Key: opcional
 ```
 
 Para permitir entrada e saída pelo mobile, compartilhe o `estoque.json` com o e-mail da

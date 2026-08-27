@@ -1,5 +1,4 @@
 using InfiniteCoffee2.Data;
-using InfiniteCoffee2.Middleware;
 using InfiniteCoffee2.Services;
 
 namespace InfiniteCoffee2
@@ -24,15 +23,9 @@ namespace InfiniteCoffee2
             builder.Services.AddHttpClient<GoogleDriveSnapshotStore>();
             builder.Services.AddCors(options =>
             {
-                // Em desenvolvimento o app Flutter (Windows, mobile ou web) conversa com esta API.
-                // Libera localhost, 127.0.0.1 e a faixa de IP de rede local (192.168./10.).
+                // O trabalho demonstrativo usa a API a partir do web, desktop e mobile.
                 options.AddPolicy("FlutterDevelopment", policy => policy
-                    .SetIsOriginAllowed(origin =>
-                        origin.StartsWith("http://localhost:", StringComparison.OrdinalIgnoreCase) ||
-                        origin.StartsWith("http://127.0.0.1:", StringComparison.OrdinalIgnoreCase) ||
-                        origin.Contains("192.168.") ||
-                        origin.Contains("10.0.") ||
-                        origin.Contains("10.0.2.2"))
+                    .AllowAnyOrigin()
                     .AllowAnyHeader()
                     .AllowAnyMethod());
             });
@@ -70,7 +63,6 @@ namespace InfiniteCoffee2
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
-            app.UseMiddleware<ApiKeyMiddleware>();
             app.UseCors("FlutterDevelopment");
 
             // Swagger fica disponível para o grupo testar as APIs durante o desenvolvimento.
