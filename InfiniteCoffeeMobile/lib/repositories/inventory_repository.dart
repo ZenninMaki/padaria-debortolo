@@ -15,9 +15,9 @@ class InventoryRepository {
 
   Future<InventorySnapshot> load({String search = ''}) async {
     try {
-      await _syncPending();
       final products = await _api.getStock(search: search);
       await _saveProducts(products);
+      unawaited(_syncPending());
       return InventorySnapshot(products: products, isOffline: false);
     } catch (error) {
       final products = await _readProducts();
@@ -44,8 +44,10 @@ class InventoryRepository {
     }
   }
 
-  Future<InventorySnapshot> syncNow({String search = ''}) =>
-      load(search: search);
+  Future<InventorySnapshot> syncNow({String search = ''}) async {
+    await _syncPending();
+    return load(search: search);
+  }
 
   Future<ExitResult> registerExit({
     required Product product,
