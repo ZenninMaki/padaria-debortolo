@@ -136,6 +136,19 @@ class InventoryApi {
       throw const ApiException('Nao foi possivel cadastrar o produto.');
     }
   }
+
+  Future<void> backup() async {
+    final response = await _client
+        .post(Uri.parse('$baseUrl/api/estoque/backup'))
+        .timeout(const Duration(seconds: 60));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final body = jsonDecode(response.body) as Map<String, dynamic>;
+      throw ApiException(
+        '${body['mensagem'] ?? 'Nao foi possivel enviar o backup.'}',
+        response.statusCode,
+      );
+    }
+  }
 }
 
 class ApiException implements Exception {

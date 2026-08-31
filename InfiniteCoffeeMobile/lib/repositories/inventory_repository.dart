@@ -49,6 +49,8 @@ class InventoryRepository {
     return load(search: search);
   }
 
+  Future<void> backup() => _api.backup();
+
   Future<ExitResult> registerExit({
     required Product product,
     required int quantity,

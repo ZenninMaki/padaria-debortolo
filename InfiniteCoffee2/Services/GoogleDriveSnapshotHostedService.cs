@@ -53,7 +53,16 @@ public sealed class GoogleDriveSnapshotHostedService : BackgroundService
         }
     }
 
-    private async Task UploadSnapshotAsync(CancellationToken cancellationToken)
+    public async Task<bool> PublicarAgoraAsync(CancellationToken cancellationToken = default)
+    {
+        if (string.Equals(Environment.GetEnvironmentVariable("PADARIA_SNAPSHOT_ONLY"), "true", StringComparison.OrdinalIgnoreCase) ||
+            string.IsNullOrWhiteSpace(_clientSecretPath) || string.IsNullOrWhiteSpace(_folderId) ||
+            !File.Exists(_clientSecretPath))
+            return false;
+        return await UploadSnapshotAsync(cancellationToken);
+    }
+
+    private async Task<bool> UploadSnapshotAsync(CancellationToken cancellationToken)
     {
         try
         {
@@ -107,13 +116,16 @@ public sealed class GoogleDriveSnapshotHostedService : BackgroundService
                 throw result.Exception ?? new InvalidOperationException("Upload do snapshot não foi concluído.");
 
             _logger.LogInformation("Snapshot do estoque enviado ao Google Drive em {Time}.", DateTimeOffset.Now);
+            return true;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
+            return false;
         }
         catch (Exception exception)
         {
             _logger.LogError(exception, "Não foi possível enviar o snapshot do estoque ao Google Drive.");
+            return false;
         }
     }
 

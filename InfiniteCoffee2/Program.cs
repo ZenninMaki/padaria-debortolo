@@ -19,7 +19,8 @@ namespace InfiniteCoffee2
             }
 
             builder.Services.AddControllersWithViews();
-            builder.Services.AddHostedService<GoogleDriveSnapshotHostedService>();
+            builder.Services.AddSingleton<GoogleDriveSnapshotHostedService>();
+            builder.Services.AddHostedService(provider => provider.GetRequiredService<GoogleDriveSnapshotHostedService>());
             builder.Services.AddHttpClient<GoogleDriveSnapshotStore>();
             builder.Services.AddCors(options =>
             {

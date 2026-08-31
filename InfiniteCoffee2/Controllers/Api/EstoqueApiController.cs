@@ -9,10 +9,12 @@ namespace InfiniteCoffee2.Controllers.Api;
 public sealed class EstoqueApiController : ControllerBase
 {
     private readonly GoogleDriveSnapshotStore _snapshotStore;
+    private readonly GoogleDriveSnapshotHostedService _snapshotPublisher;
 
-    public EstoqueApiController(GoogleDriveSnapshotStore snapshotStore)
+    public EstoqueApiController(GoogleDriveSnapshotStore snapshotStore, GoogleDriveSnapshotHostedService snapshotPublisher)
     {
         _snapshotStore = snapshotStore;
+        _snapshotPublisher = snapshotPublisher;
     }
 
     /// <summary>Lista o estoque e permite pesquisar por nome ou código de barras.</summary>
@@ -35,6 +37,16 @@ public sealed class EstoqueApiController : ControllerBase
     /// <summary>Impressão digital do estoque. Use no front para recarregar só quando houver mudança.</summary>
     [HttpGet("versao")]
     public IActionResult Versao() => Ok(new { versao = Banco.ObterVersaoEstoque() });
+
+    [HttpPost("backup")]
+    public async Task<IActionResult> Backup()
+    {
+        if (IsSnapshotOnly())
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { mensagem = "O backup deve ser executado pela API local que acessa o SQL Server." });
+        return await _snapshotPublisher.PublicarAgoraAsync()
+            ? Ok(new { mensagem = "Backup enviado para o Google Drive." })
+            : StatusCode(StatusCodes.Status503ServiceUnavailable, new { mensagem = "Configure o acesso OAuth do Google Drive no desktop." });
+    }
 
     /// <summary>Retorna uma fotografia versionada do estoque para clientes de consulta.</summary>
     [HttpGet("snapshot")]

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 
 import '../models/product.dart';
 import '../repositories/inventory_repository.dart';
+import '../services/inventory_api.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key, required this.repository});
@@ -85,6 +86,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 onExit: _registerExit,
                 onEntry: _registerEntry,
                 onCreateProduct: _showProductDialog,
+                onSync: _syncNow,
+                onBackup: _backupNow,
               )
             : _SaleView(
                 products: data.products,
@@ -190,6 +193,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _sendToDrive() async {
     await _runSync('Alteracoes enviadas para o Google Drive.');
+  }
+
+  Future<void> _backupNow() async {
+    try {
+      await widget.repository.backup();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Backup enviado para o Google Drive.')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              error is ApiException
+                  ? error.message
+                  : 'Nao foi possivel enviar o backup.',
+            ),
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _runSync(String successMessage) async {
@@ -611,6 +637,8 @@ class _StockView extends StatelessWidget {
     required this.onExit,
     required this.onEntry,
     required this.onCreateProduct,
+    required this.onSync,
+    required this.onBackup,
   });
   final List<Product> products;
   final bool offline;
@@ -620,6 +648,8 @@ class _StockView extends StatelessWidget {
   final ValueChanged<Product> onExit;
   final ValueChanged<Product> onEntry;
   final VoidCallback onCreateProduct;
+  final VoidCallback onSync;
+  final VoidCallback onBackup;
 
   @override
   Widget build(BuildContext context) {
@@ -630,10 +660,26 @@ class _StockView extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Align(
             alignment: Alignment.centerRight,
-            child: ElevatedButton.icon(
-              onPressed: onCreateProduct,
-              icon: const Icon(Icons.add_box_outlined),
-              label: const Text('Cadastrar produto'),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: onSync,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Atualizar'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: onBackup,
+                  icon: const Icon(Icons.cloud_upload_outlined),
+                  label: const Text('Backup no Google Drive'),
+                ),
+                ElevatedButton.icon(
+                  onPressed: onCreateProduct,
+                  icon: const Icon(Icons.add_box_outlined),
+                  label: const Text('Cadastrar produto'),
+                ),
+              ],
             ),
           ),
         ),
