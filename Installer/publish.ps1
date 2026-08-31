@@ -53,7 +53,12 @@ if (-not $SkipInstaller) {
     }
     else {
         Write-Host 'Compilando instalador Windows...'
-        & ($isccCandidates[0]) (Join-Path $PSScriptRoot 'PadariaDebortolo.iss')
+        $issFile = Join-Path $PSScriptRoot 'PadariaDebortolo.iss'
+        $isccPath = @($isccCandidates)[0]
+        $process = Start-Process -FilePath $isccPath -ArgumentList "`"$issFile`"" -Wait -PassThru -NoNewWindow
+        if ($process.ExitCode -ne 0) {
+            throw "O Inno Setup falhou com o codigo $($process.ExitCode)."
+        }
     }
 }
 
