@@ -13,7 +13,10 @@ class InventoryApi {
   static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
   static const _apiToken = String.fromEnvironment('API_ACCESS_TOKEN');
   static const _writeToken = String.fromEnvironment('API_WRITE_TOKEN');
-  static const _localNetworkBaseUrl = 'http://192.168.1.101:5049';
+  static const _localNetworkBaseUrl = String.fromEnvironment(
+    'API_LOCAL_URL',
+    defaultValue: 'http://192.168.1.101:5049',
+  );
 
   Map<String, String> _headers([
     Map<String, String>? extra,

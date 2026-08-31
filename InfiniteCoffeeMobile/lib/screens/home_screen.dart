@@ -219,8 +219,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _runSync(String successMessage) async {
-    setState(() => _stock = widget.repository.syncNow(search: _search));
-    final result = await _stock;
+    final future = widget.repository.syncNow(search: _search);
+    setState(() => _stock = future);
+    final result = await future;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
