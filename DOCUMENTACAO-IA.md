@@ -206,7 +206,8 @@ flutter run -d emulator-5554
   `API_BASE_URL=http://IP_DO_PC:5049`.
 - Para compilar APK e Windows automaticamente, use `Installer/Build-Apps.ps1`. O script lê
   `PADARIA_READONLY_TOKEN` e `PADARIA_MOBILE_WRITE_TOKEN` do ambiente apenas quando elas
-  existirem e nunca salva esses valores no repositorio.
+  existirem e nunca salva esses valores no repositorio. O APK usa o IP da LAN informado e o
+  Windows usa `http://localhost:5049`, para trabalhar diretamente com o SQL Server local.
 
 ## Limitacoes e proximos cuidados
 

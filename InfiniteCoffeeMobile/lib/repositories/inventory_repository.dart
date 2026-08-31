@@ -34,7 +34,7 @@ class InventoryRepository {
       final message = switch (error) {
         ApiException(:final message) => message,
         TimeoutException() => 'O servidor demorou para responder. Tente novamente em alguns segundos.',
-        _ => 'Nao foi possivel conectar ao servidor. Verifique a internet do celular.',
+        _ => 'Nao foi possivel conectar a API. Verifique a rede e se o servidor esta ligado.',
       };
       return InventorySnapshot(
         products: filtered,
