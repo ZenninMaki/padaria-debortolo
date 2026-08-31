@@ -192,14 +192,12 @@ flutter run -d emulator-5554
   real de conexao.
 - No modo demonstrativo, o mobile mantém uma cópia local persistente dos produtos, atualiza
   o saldo imediatamente após entrada/saída e mantém operações pendentes para sincronização
-  posterior pela API. O Google Drive continua sendo alimentado pelo serviço do backend, não
-  diretamente por credenciais dentro do APK.
-- O modo demonstrativo cloud aceita entradas e saídas em `/api/estoque/entrada` e
-  `/api/estoque/saida` quando `PADARIA_SNAPSHOT_ONLY=true`, usando a conta de serviço definida
-  em `GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`. Essa conta precisa ter permissão de Editor no
-  `estoque.json`; a chave nunca deve ser commitada.
-- O desktop importa o snapshot do Drive para o SQL Server e publica o snapshot novamente a
-  cada 30 minutos. O mobile recarrega o estoque e tenta enviar a fila local no mesmo intervalo.
+  posterior pela API. O Google Drive recebe somente uma cópia do SQL Server.
+- O Render em `PADARIA_SNAPSHOT_ONLY=true` e somente consulta. Entradas e saídas devem ser
+  enviadas a uma API com acesso ao SQL Server; o arquivo do Google Drive nunca e a fonte de
+  escrita.
+- O desktop publica o snapshot do SQL Server no Drive a cada 30 minutos. O mobile recarrega
+  o estoque e tenta enviar a fila local no mesmo intervalo.
 - O atalho instalado usa `Installer/Start-PadariaDesktop.cmd`, que inicia o backend local em
   `http://0.0.0.0:5049` e abre o aplicativo desktop juntos. Assim o funcionamento normal
   do desktop nao depende do Render nem de internet. A instalacao libera a porta 5049 somente

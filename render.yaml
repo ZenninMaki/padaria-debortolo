@@ -10,11 +10,3 @@ services:
         value: "true"
       - key: GOOGLE_DRIVE_SNAPSHOT_FILE_ID
         sync: false
-      - key: GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON
-        sync: false
-      - key: PADARIA_API_TOKEN
-        sync: false
-      - key: PADARIA_READONLY_TOKEN
-        sync: false
-      - key: PADARIA_MOBILE_WRITE_TOKEN
-        sync: false

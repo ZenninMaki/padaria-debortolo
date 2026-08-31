@@ -71,15 +71,14 @@ public sealed class EstoqueApiController : ControllerBase
 
     /// <summary>Registra uma saída e reduz o saldo de forma transacional.</summary>
     [HttpPost("saida")]
-    public async Task<IActionResult> Saida([FromBody] SaidaEstoqueRequest request)
+    public IActionResult Saida([FromBody] SaidaEstoqueRequest request)
     {
         if (request.Quantidade < 1 || string.IsNullOrWhiteSpace(request.Motivo) || request.Motivo.Length > 200)
             return BadRequest(new { mensagem = "Informe uma quantidade válida e um motivo de até 200 caracteres." });
+        if (IsSnapshotOnly())
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { mensagem = "Esta API está em modo consulta. A alteração deve ser enviada à API que acessa o SQL Server." });
 
-        var ok = IsSnapshotOnly()
-            ? await _snapshotStore.ApplyMovementAsync(request.ProdutoId, request.Quantidade, false)
-            : Banco.RegistrarSaidaEstoque(request.ProdutoId, request.Quantidade, request.Motivo);
-        if (!ok)
+        if (!Banco.RegistrarSaidaEstoque(request.ProdutoId, request.Quantidade, request.Motivo))
             return BadRequest(new { mensagem = "Produto inexistente ou estoque insuficiente." });
 
         return Ok(new { mensagem = "Saída registrada com sucesso." });
@@ -87,14 +86,13 @@ public sealed class EstoqueApiController : ControllerBase
 
     /// <summary>Registra uma entrada e aumenta o saldo de forma transacional.</summary>
     [HttpPost("entrada")]
-    public async Task<IActionResult> Entrada([FromBody] EntradaEstoqueRequest request)
+    public IActionResult Entrada([FromBody] EntradaEstoqueRequest request)
     {
         if (request.Quantidade < 1 || string.IsNullOrWhiteSpace(request.Motivo) || request.Motivo.Length > 200)
             return BadRequest(new { mensagem = "Informe uma quantidade válida e um motivo de até 200 caracteres." });
-        var ok = IsSnapshotOnly()
-            ? await _snapshotStore.ApplyMovementAsync(request.ProdutoId, request.Quantidade, true)
-            : Banco.RegistrarEntradaEstoque(request.ProdutoId, request.Quantidade, request.Motivo);
-        if (!ok)
+        if (IsSnapshotOnly())
+            return StatusCode(StatusCodes.Status503ServiceUnavailable, new { mensagem = "Esta API está em modo consulta. A alteração deve ser enviada à API que acessa o SQL Server." });
+        if (!Banco.RegistrarEntradaEstoque(request.ProdutoId, request.Quantidade, request.Motivo))
             return BadRequest(new { mensagem = "Produto inexistente." });
         return Ok(new { mensagem = "Entrada registrada com sucesso." });
     }

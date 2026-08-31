@@ -25,10 +25,8 @@ Configure as variáveis secretas do serviço:
 
 ```text
 GOOGLE_DRIVE_SNAPSHOT_FILE_ID=ID_DO_ARQUIVO_estoque.json
-GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON=JSON_DA_CONTA_DE_SERVICO
 PADARIA_API_TOKEN=token-administrativo-longo
 PADARIA_READONLY_TOKEN=token-somente-leitura-do-mobile
-PADARIA_MOBILE_WRITE_TOKEN=token-de-escrita-do-mobile
 ```
 
 O `PADARIA_SNAPSHOT_ONLY` já fica definido como `true` no `render.yaml`.
@@ -49,10 +47,8 @@ as chamadas sem header `X-Api-Key`.
 X-Api-Key: opcional
 ```
 
-Para permitir entrada e saída pelo mobile, compartilhe o `estoque.json` com o e-mail da
-conta de serviço como Editor e configure a chave JSON inteira em
-`GOOGLE_DRIVE_SERVICE_ACCOUNT_JSON`. As operações de escrita devem usar
-`PADARIA_MOBILE_WRITE_TOKEN`.
+O Render neste modo e somente leitura. Entradas e saídas devem ser enviadas para a API local
+que acessa o SQL Server. O desktop publica o snapshot do SQL Server no Drive.
 
 O serviço gratuito pode dormir após 15 minutos sem acesso. O primeiro acesso
 depois disso pode levar cerca de um minuto.
