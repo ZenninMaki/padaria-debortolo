@@ -13,8 +13,7 @@ class InventoryApi {
   static const _configuredBaseUrl = String.fromEnvironment('API_BASE_URL');
   static const _apiToken = String.fromEnvironment('API_ACCESS_TOKEN');
   static const _writeToken = String.fromEnvironment('API_WRITE_TOKEN');
-  static const _productionBaseUrl =
-      'https://padaria-debortolo-api-8w5w.onrender.com';
+  static const _localNetworkBaseUrl = 'http://192.168.1.101:5049';
 
   Map<String, String> _headers([
     Map<String, String>? extra,
@@ -33,7 +32,7 @@ class InventoryApi {
     }
     if (kIsWeb) return 'http://localhost:5049';
     return defaultTargetPlatform == TargetPlatform.android
-        ? _productionBaseUrl
+        ? _localNetworkBaseUrl
         : 'http://localhost:5049';
   }
 

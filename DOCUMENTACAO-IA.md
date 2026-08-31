@@ -186,8 +186,9 @@ flutter run -d emulator-5554
 - Os tokens continuam aceitos por compatibilidade, mas nao sao obrigatorios enquanto a API
   demonstrativa estiver publica. APKs novos podem ser compilados sem `API_ACCESS_TOKEN` e
   `API_WRITE_TOKEN`.
-- O cliente mobile usa a URL do Render por padrao no Android, enquanto o desktop usa a API
-  local em `http://localhost:5049`. O cliente aguarda ate 60 segundos para
+- O cliente mobile desta instalacao usa a API local da padaria em `http://192.168.1.101:5049`,
+  enquanto o desktop usa `http://localhost:5049`. Se o IP do computador mudar, compile o
+  APK com `API_BASE_URL=http://IP_DO_PC:5049`. O cliente aguarda ate 60 segundos para
   permitir o despertar da instancia gratuita e exibe erro de autenticacao separado de erro
   real de conexao.
 - No modo demonstrativo, o mobile mantém uma cópia local persistente dos produtos, atualiza
