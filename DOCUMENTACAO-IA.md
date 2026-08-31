@@ -204,6 +204,9 @@ flutter run -d emulator-5554
   do desktop nao depende do Render nem de internet. A instalacao libera a porta 5049 somente
   no perfil de rede privada. Para o APK acessar o PC pela LAN, compile-o com
   `API_BASE_URL=http://IP_DO_PC:5049`.
+- Para compilar APK e Windows automaticamente, use `Installer/Build-Apps.ps1`. O script lê
+  `PADARIA_READONLY_TOKEN` e `PADARIA_MOBILE_WRITE_TOKEN` do ambiente apenas quando elas
+  existirem e nunca salva esses valores no repositorio.
 
 ## Limitacoes e proximos cuidados
 
