@@ -20,6 +20,23 @@ namespace InfiniteCoffee2.Data
         // CLIENTES
         // =========================
 
+        public static Dictionary<string, object>? BuscarClientePorId(int id)
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var cmd = new SqlCommand("SELECT id_cliente, nome_cliente, email, telefone FROM Clientes WHERE id_cliente = @id", conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            using var reader = cmd.ExecuteReader();
+            if (!reader.Read()) return null;
+            return new Dictionary<string, object>
+            {
+                ["id_cliente"] = reader["id_cliente"],
+                ["nome_cliente"] = reader["nome_cliente"],
+                ["email"] = reader["email"],
+                ["telefone"] = reader["telefone"]
+            };
+        }
+
         public static List<Dictionary<string, object>> ListarClientes()
         {
             var lista = new List<Dictionary<string, object>>();
@@ -102,6 +119,26 @@ namespace InfiniteCoffee2.Data
         // =========================
         // PRODUTOS
         // =========================
+
+        public static Dictionary<string, object>? BuscarProdutoPorId(int id)
+        {
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var cmd = new SqlCommand("SELECT id_produto, nome_produto, preco, tipo, quantidade_estoque, codigo_barras, descricao FROM Produtos WHERE id_produto = @id AND ativo = 1", conn);
+            cmd.Parameters.AddWithValue("@id", id);
+            using var reader = cmd.ExecuteReader();
+            if (!reader.Read()) return null;
+            return new Dictionary<string, object>
+            {
+                ["id_produto"] = reader["id_produto"],
+                ["nome_produto"] = reader["nome_produto"],
+                ["preco"] = reader["preco"],
+                ["tipo"] = reader["tipo"],
+                ["quantidade_estoque"] = reader["quantidade_estoque"],
+                ["codigo_barras"] = reader["codigo_barras"],
+                ["descricao"] = reader["descricao"]
+            };
+        }
 
         public static List<Dictionary<string, object>> ListarProdutos()
         {
@@ -194,7 +231,21 @@ namespace InfiniteCoffee2.Data
 
         public static List<Dictionary<string, object>> ListarEstoqueBaixo(int limite = 5)
         {
-            return ListarEstoque().Where(item => Convert.ToInt32(item["quantidade_estoque"]) <= limite).ToList();
+            GarantirTabelaMovimentacoes();
+            var lista = new List<Dictionary<string, object>>();
+            using var conn = new SqlConnection(connectionString);
+            conn.Open();
+            using var cmd = new SqlCommand("SELECT id_produto, nome_produto, preco, tipo, quantidade_estoque, codigo_barras, descricao FROM Produtos WHERE ativo = 1 AND quantidade_estoque <= @limite ORDER BY quantidade_estoque ASC", conn);
+            cmd.Parameters.AddWithValue("@limite", limite);
+            using var reader = cmd.ExecuteReader();
+            while (reader.Read())
+                lista.Add(new Dictionary<string, object>
+                {
+                    ["id_produto"] = reader["id_produto"], ["nome_produto"] = reader["nome_produto"], ["preco"] = reader["preco"],
+                    ["tipo"] = reader["tipo"], ["quantidade_estoque"] = reader["quantidade_estoque"],
+                    ["codigo_barras"] = reader["codigo_barras"], ["descricao"] = reader["descricao"]
+                });
+            return lista;
         }
 
         public static List<Dictionary<string, object>> ListarMovimentacoesEstoque()
@@ -442,7 +493,7 @@ namespace InfiniteCoffee2.Data
             }
         }
 
-        private static void GarantirTabelaMovimentacoes()
+        public static void GarantirTabelaMovimentacoes()
         {
             using var conn = new SqlConnection(connectionString);
             conn.Open();

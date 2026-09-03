@@ -16,6 +16,8 @@ namespace InfiniteCoffee2
                 Banco.Configurar(
                     Environment.GetEnvironmentVariable("PADARIA_CONNECTION_STRING") ??
                     builder.Configuration.GetConnectionString("DefaultConnection"));
+                Banco.GarantirTabelaMovimentacoes();
+                Banco.GarantirEstruturaSync();
             }
 
             builder.Services.AddControllersWithViews();
