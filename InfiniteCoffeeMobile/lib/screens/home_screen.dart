@@ -21,6 +21,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   final Map<int, CartLine> _cart = {};
   late Future<InventorySnapshot> _stock;
   Timer? _refreshTimer;
+  Timer? _searchDebounce;
+  final TextEditingController _searchController = TextEditingController();
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
 
   @override
@@ -60,14 +62,23 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _refreshTimer?.cancel();
+    _searchDebounce?.cancel();
+    _searchController.dispose();
     _connectivitySubscription?.cancel();
     super.dispose();
   }
 
   void _reload([String search = '']) {
+    _search = search;
     setState(() {
-      _search = search;
       _stock = widget.repository.load(search: search);
+    });
+  }
+
+  void _onSearchChanged(String value) {
+    _searchDebounce?.cancel();
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      _reload(value);
     });
   }
 
@@ -91,14 +102,19 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 onOpenStock: () => setState(() => _selectedIndex = 2),
               )
             : _selectedIndex == 1
-            ? _ProductsView(products: data.products, onSearch: _reload)
+            ? _ProductsView(
+                products: data.products,
+                searchController: _searchController,
+                onSearch: _onSearchChanged,
+              )
             : _selectedIndex == 2
             ? _StockView(
                 products: data.products,
                 offline: data.isOffline,
                 errorMessage: data.errorMessage,
                 search: _search,
-                onSearch: _reload,
+                searchController: _searchController,
+                onSearch: _onSearchChanged,
                 onExit: _registerExit,
                 onEntry: _registerEntry,
                 onCreateProduct: _showProductDialog,
@@ -108,7 +124,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             : _SaleView(
                 products: data.products,
                 search: _search,
-                onSearch: _reload,
+                searchController: _searchController,
+                onSearch: _onSearchChanged,
                 cart: _cart.values.toList(),
                 onAdd: _addToCart,
                 onRemove: _removeFromCart,
@@ -635,13 +652,22 @@ class _Dashboard extends StatelessWidget {
 }
 
 class _ProductsView extends StatelessWidget {
-  const _ProductsView({required this.products, required this.onSearch});
+  const _ProductsView({
+    required this.products,
+    required this.onSearch,
+    this.searchController,
+  });
   final List<Product> products;
+  final TextEditingController? searchController;
   final ValueChanged<String> onSearch;
 
   @override
-  Widget build(BuildContext context) =>
-      _ProductList(title: 'Produtos', products: products, onSearch: onSearch);
+  Widget build(BuildContext context) => _ProductList(
+        title: 'Produtos',
+        products: products,
+        searchController: searchController,
+        onSearch: onSearch,
+      );
 }
 
 class _StockView extends StatelessWidget {
@@ -650,6 +676,7 @@ class _StockView extends StatelessWidget {
     required this.offline,
     this.errorMessage,
     required this.search,
+    required this.searchController,
     required this.onSearch,
     required this.onExit,
     required this.onEntry,
@@ -661,6 +688,7 @@ class _StockView extends StatelessWidget {
   final bool offline;
   final String? errorMessage;
   final String search;
+  final TextEditingController searchController;
   final ValueChanged<String> onSearch;
   final ValueChanged<Product> onExit;
   final ValueChanged<Product> onEntry;
@@ -727,6 +755,7 @@ class _StockView extends StatelessWidget {
             title: 'Estoque',
             products: products,
             search: search,
+            searchController: searchController,
             onSearch: onSearch,
             onExit: onExit,
             onEntry: onEntry,
@@ -742,6 +771,7 @@ class _ProductList extends StatelessWidget {
     required this.title,
     required this.products,
     required this.onSearch,
+    this.searchController,
     this.search = '',
     this.onExit,
     this.onEntry,
@@ -750,6 +780,7 @@ class _ProductList extends StatelessWidget {
   final String title;
   final List<Product> products;
   final String search;
+  final TextEditingController? searchController;
   final ValueChanged<String> onSearch;
   final ValueChanged<Product>? onExit;
   final ValueChanged<Product>? onEntry;
@@ -762,6 +793,7 @@ class _ProductList extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.all(16),
           child: TextField(
+            controller: searchController,
             onChanged: onSearch,
             decoration: InputDecoration(
               prefixIcon: const Icon(Icons.search),
@@ -769,7 +801,10 @@ class _ProductList extends StatelessWidget {
               suffixIcon: search.isEmpty
                   ? null
                   : IconButton(
-                      onPressed: () => onSearch(''),
+                      onPressed: () {
+                        searchController?.clear();
+                        onSearch('');
+                      },
                       icon: const Icon(Icons.clear),
                     ),
             ),
@@ -852,12 +887,14 @@ class _SaleView extends StatefulWidget {
     required this.search,
     required this.onSearch,
     required this.cart,
+    this.searchController,
     required this.onAdd,
     required this.onRemove,
     required this.onFinish,
   });
   final List<Product> products;
   final String search;
+  final TextEditingController? searchController;
   final ValueChanged<String> onSearch;
   final List<CartLine> cart;
   final ValueChanged<Product> onAdd;
@@ -978,6 +1015,7 @@ class _SaleViewState extends State<_SaleView> {
             title: 'Adicionar itens à venda',
             products: widget.products,
             search: widget.search,
+            searchController: widget.searchController,
             onSearch: widget.onSearch,
             onAdd: widget.onAdd,
           ),
