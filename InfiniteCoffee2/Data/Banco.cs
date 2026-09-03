@@ -101,24 +101,6 @@ namespace InfiniteCoffee2.Data
             };
         }
 
-        public static Dictionary<string, object>? BuscarClientePorId(int id)
-        {
-            using var conn = new SqlConnection(connectionString);
-            conn.Open();
-            using var cmd = new SqlCommand("SELECT TOP 1 id_cliente, nome_cliente, email, telefone FROM Clientes WHERE id_cliente = @id", conn);
-            cmd.Parameters.AddWithValue("@id", id);
-            using var reader = cmd.ExecuteReader();
-            if (!reader.Read()) return null;
-
-            return new Dictionary<string, object>
-            {
-                ["id_cliente"] = reader["id_cliente"],
-                ["nome_cliente"] = reader["nome_cliente"],
-                ["email"] = reader["email"],
-                ["telefone"] = reader["telefone"]
-            };
-        }
-
         public static void CadastrarCliente(string nome, string email, string telefone)
         {
             using (var conn = new SqlConnection(connectionString))
