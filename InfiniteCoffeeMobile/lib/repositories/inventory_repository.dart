@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:async';
+import 'dart:io';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http show ClientException;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/product.dart';
@@ -12,7 +15,11 @@ class InventoryRepository {
 
   static const _productsKey = 'cached_products';
   static const _pendingKey = 'pending_stock_exits';
+  static const _maxAttempts = 20;
+  static const _maxConcurrent = 5;
   final InventoryApi _api;
+  final Future<SharedPreferences> _prefsFuture =
+      SharedPreferences.getInstance();
 
   Future<InventorySnapshot> load({String search = ''}) async {
     try {
@@ -63,30 +70,27 @@ class InventoryRepository {
     if (quantity > product.quantity) {
       return const ExitResult(false, 'Estoque insuficiente.');
     }
+    final id = _newOpId();
     try {
       await _api.registerExit(
         productId: product.id,
         quantity: quantity,
         reason: reason,
+        idempotencyKey: id,
       );
       await _changeCachedQuantity(product.id, -quantity);
       return const ExitResult(true, 'Saida registrada com sucesso.');
     } catch (error) {
-      if (error is ApiException &&
-          (error.statusCode == 401 || error.statusCode == 403)) {
-        return ExitResult(false, error.message);
+      if (!_isRetryable(error)) {
+        return ExitResult(false, _userMessage(error));
       }
-      // Sem internet, a operacao fica guardada para envio posterior.
-      final preferences = await SharedPreferences.getInstance();
-      final pending = preferences.getStringList(_pendingKey) ?? [];
-      pending.add(
-        jsonEncode({
-          'produtoId': product.id,
-          'quantidade': quantity,
-          'motivo': reason,
-        }),
+      await _enqueue(
+        tipo: 'saida',
+        id: id,
+        productId: product.id,
+        quantity: quantity,
+        reason: reason,
       );
-      await preferences.setStringList(_pendingKey, pending);
       await _changeCachedQuantity(product.id, -quantity);
       return const ExitResult(
         true,
@@ -103,30 +107,27 @@ class InventoryRepository {
     if (quantity < 1) {
       return const ExitResult(false, 'Informe uma quantidade valida.');
     }
+    final id = _newOpId();
     try {
       await _api.registerEntry(
         productId: product.id,
         quantity: quantity,
         reason: reason,
+        idempotencyKey: id,
       );
       await _changeCachedQuantity(product.id, quantity);
       return const ExitResult(true, 'Entrada registrada com sucesso.');
     } catch (error) {
-      if (error is ApiException &&
-          (error.statusCode == 401 || error.statusCode == 403)) {
-        return ExitResult(false, error.message);
+      if (!_isRetryable(error)) {
+        return ExitResult(false, _userMessage(error));
       }
-      final preferences = await SharedPreferences.getInstance();
-      final pending = preferences.getStringList(_pendingKey) ?? [];
-      pending.add(
-        jsonEncode({
-          'tipo': 'entrada',
-          'produtoId': product.id,
-          'quantidade': quantity,
-          'motivo': reason,
-        }),
+      await _enqueue(
+        tipo: 'entrada',
+        id: id,
+        productId: product.id,
+        quantity: quantity,
+        reason: reason,
       );
-      await preferences.setStringList(_pendingKey, pending);
       await _changeCachedQuantity(product.id, quantity);
       return const ExitResult(
         true,
@@ -163,53 +164,118 @@ class InventoryRepository {
   }
 
   Future<void> _syncPending() async {
-    final preferences = await SharedPreferences.getInstance();
+    final preferences = await _prefsFuture;
     final pending = preferences.getStringList(_pendingKey) ?? [];
     if (pending.isEmpty) return;
 
     final remaining = <String>[];
-    const maxConcurrent = 5;
 
-    // Processa em blocos de maxConcurrent para evitar sobrecarga de conexoes.
-    for (var i = 0; i < pending.length; i += maxConcurrent) {
-      final batch = pending.sublist(
-        i,
-        i + maxConcurrent > pending.length ? pending.length : i + maxConcurrent,
+    for (var i = 0; i < pending.length; i += _maxConcurrent) {
+      final end =
+          i + _maxConcurrent > pending.length ? pending.length : i + _maxConcurrent;
+      final results = await Future.wait(
+        pending.sublist(i, end).map(_attemptSync),
       );
-      final futures = batch.map((item) async {
-        final data = jsonDecode(item) as Map<String, dynamic>;
-        try {
-          if (data['tipo'] == 'entrada') {
-            await _api.registerEntry(
-              productId: data['produtoId'],
-              quantity: data['quantidade'],
-              reason: data['motivo'],
-            );
-          } else {
-            await _api.registerExit(
-              productId: data['produtoId'],
-              quantity: data['quantidade'],
-              reason: data['motivo'],
-            );
-          }
-        } catch (error) {
-          debugPrint(
-            '[SyncPending] Falha ao sincronizar '
-            '${data['tipo'] ?? '?'} '
-            'produtoId=${data['produtoId'] ?? '?'}: '
-            '$error',
-          );
-          remaining.add(item);
-        }
-      });
-      await Future.wait(futures);
+      for (final r in results) {
+        if (r != null) remaining.add(r);
+      }
     }
 
     await preferences.setStringList(_pendingKey, remaining);
   }
 
+  /// Retorna null se sincronizou ou descartou (fatal/limite); senão o JSON atualizado.
+  Future<String?> _attemptSync(String item) async {
+    Map<String, dynamic> data;
+    try {
+      data = jsonDecode(item) as Map<String, dynamic>;
+    } catch (_) {
+      debugPrint('[SyncPending] Item ilegivel descartado.');
+      return null;
+    }
+    final tipo = '${data['tipo'] ?? 'saida'}';
+    final isEntry = tipo == 'entrada';
+    final id = '${data['id'] ?? _newOpId()}';
+    final attempts = (data['attempts'] as num?)?.toInt() ?? 0;
+    try {
+      if (isEntry) {
+        await _api.registerEntry(
+          productId: (data['produtoId'] as num).toInt(),
+          quantity: (data['quantidade'] as num).toInt(),
+          reason: '${data['motivo'] ?? ''}',
+          idempotencyKey: id,
+        );
+      } else {
+        await _api.registerExit(
+          productId: (data['produtoId'] as num).toInt(),
+          quantity: (data['quantidade'] as num).toInt(),
+          reason: '${data['motivo'] ?? ''}',
+          idempotencyKey: id,
+        );
+      }
+      return null;
+    } catch (error) {
+      if (!_isRetryable(error)) {
+        debugPrint('[SyncPending] Erro fatal, descartado: $error');
+        return null;
+      }
+      if (attempts + 1 >= _maxAttempts) {
+        debugPrint('[SyncPending] Limite de tentativas, descartado: $id');
+        return null;
+      }
+      debugPrint('[SyncPending] Retryavel ($tipo id=$id): $error');
+      return jsonEncode({...data, 'id': id, 'tipo': tipo, 'attempts': attempts + 1});
+    }
+  }
+
+  bool _isRetryable(Object error) {
+    if (error is TimeoutException) return true;
+    if (error is SocketException) return true;
+    if (error is http.ClientException) return true;
+    if (error is ApiException) {
+      final s = error.statusCode;
+      if (s == null) return true;
+      if (s == 408 || s == 429) return true;
+      return s >= 500;
+    }
+    return false;
+  }
+
+  String _userMessage(Object error) => switch (error) {
+        ApiException(:final message) => message,
+        TimeoutException() => 'O servidor demorou para responder.',
+        _ => 'Operacao rejeitada pelo servidor.',
+      };
+
+  String _newOpId() =>
+      '${DateTime.now().microsecondsSinceEpoch}-${Random.secure().nextInt(1 << 32)}';
+
+  Future<void> _enqueue({
+    required String tipo,
+    required String id,
+    required int productId,
+    required int quantity,
+    required String reason,
+  }) async {
+    final preferences = await _prefsFuture;
+    final pending = preferences.getStringList(_pendingKey) ?? [];
+    pending.add(
+      jsonEncode({
+        'v': 1,
+        'id': id,
+        'tipo': tipo,
+        'produtoId': productId,
+        'quantidade': quantity,
+        'motivo': reason,
+        'ts': DateTime.now().toIso8601String(),
+        'attempts': 0,
+      }),
+    );
+    await preferences.setStringList(_pendingKey, pending);
+  }
+
   Future<void> _saveProducts(List<Product> products) async {
-    final preferences = await SharedPreferences.getInstance();
+    final preferences = await _prefsFuture;
     await preferences.setString(
       _productsKey,
       jsonEncode(products.map(_toJson).toList()),
@@ -217,7 +283,7 @@ class InventoryRepository {
   }
 
   Future<List<Product>> _readProducts() async {
-    final preferences = await SharedPreferences.getInstance();
+    final preferences = await _prefsFuture;
     final raw = preferences.getString(_productsKey);
     if (raw == null) {
       return [];

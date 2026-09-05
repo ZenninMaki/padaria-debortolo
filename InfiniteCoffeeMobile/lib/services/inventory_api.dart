@@ -68,11 +68,16 @@ class InventoryApi {
     required int productId,
     required int quantity,
     required String reason,
+    String? idempotencyKey,
   }) async {
     final response = await _client
         .post(
           Uri.parse('$baseUrl/api/estoque/saida'),
-          headers: _headers({'Content-Type': 'application/json'}, true),
+          headers: _headers({
+            'Content-Type': 'application/json',
+            if (idempotencyKey != null && idempotencyKey.isNotEmpty)
+              'X-Idempotency-Key': idempotencyKey,
+          }, true),
           body: jsonEncode({
             'produtoId': productId,
             'quantidade': quantity,
@@ -96,11 +101,16 @@ class InventoryApi {
     required int productId,
     required int quantity,
     required String reason,
+    String? idempotencyKey,
   }) async {
     final response = await _client
         .post(
           Uri.parse('$baseUrl/api/estoque/entrada'),
-          headers: _headers({'Content-Type': 'application/json'}, true),
+          headers: _headers({
+            'Content-Type': 'application/json',
+            if (idempotencyKey != null && idempotencyKey.isNotEmpty)
+              'X-Idempotency-Key': idempotencyKey,
+          }, true),
           body: jsonEncode({
             'produtoId': productId,
             'quantidade': quantity,
